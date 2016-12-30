@@ -6,5 +6,21 @@ use Archive::Libarchive;
 
 my Archive::Libarchive $a .= new: operation => LibarchiveWrite;
 is $a.WHAT, Archive::Libarchive, 'Create object for writing';
+my $path = $*PROGRAM-NAME.subst(/ <-[/]>+$/, '');
+throws-like
+  { $a.open: $path ~ 'test.tar.gz' },
+  X::Libarchive,
+  message => /'File already present'/,
+  'Open file fails';
+my $fileout = $path ~ 'test1.tar.gz';
+lives-ok { $a.open: $fileout }, 'Open file succeedes';
+my Archive::Libarchive $aa .= new: operation => LibarchiveWrite, file => $fileout;
+is $aa.WHAT, Archive::Libarchive, 'Create object and file for writing';
+my Archive::Libarchive $ao .= new: operation => LibarchiveOverwrite, file => $fileout;
+is $ao.WHAT, Archive::Libarchive, 'Create object and file for overwriting';
+is $aa.write-header($*PROGRAM-NAME), True, 'Write header';
+is $aa.write-data($*PROGRAM-NAME), True, 'Write data';
+lives-ok { $aa.close }, 'Close archive';
+$fileout.IO.unlink;
 
 done-testing;

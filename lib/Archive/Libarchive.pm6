@@ -2,25 +2,9 @@ use v6;
 unit class Archive::Libarchive:ver<0.0.1>;
 
 use Archive::Libarchive::Raw;
-use Archive::Libarchive::Entry;
 use NativeCall;
 
-class X::Libarchive is Exception
-{
-  has Int $.errno;
-  has Str $.error;
-
-  method message { "Error {$!errno}: $!error"; }
-}
-
 enum LibarchiveOp  is export <LibarchiveRead LibarchiveWrite LibarchiveOverwrite>;
-enum LibarchiveFormat is export <ARCHIVE_7ZIP ARCHIVE_AR ARCHIVE_BSD ARCHIVE_CAB ARCHIVE_CLASSIC
-  ARCHIVE_CODE ARCHIVE_CPIO ARCHIVE_DUMP ARCHIVE_EMPTY ARCHIVE_GNUTAR ARCHIVE_ISO9660 ARCHIVE_LHA ARCHIVE_MTREE
-  ARCHIVE_NEWC ARCHIVE_PAX ARCHIVE_RAR ARCHIVE_RAW ARCHIVE_RESTRICTED ARCHIVE_SHAR ARCHIVE_SVR4 ARCHIVE_TAR
-  ARCHIVE_USTAR ARCHIVE_V7TAR ARCHIVE_WARC ARCHIVE_XAR ARCHIVE_ZIP>;
-enum LibarchiveFilter is export <ARCHIVE_B64ENCODE ARCHIVE_BZIP2 ARCHIVE_COMPRESS ARCHIVE_GRZIP
-  ARCHIVE_GZIP ARCHIVE_LRZIP ARCHIVE_LZ4 ARCHIVE_LZIP ARCHIVE_LZMA ARCHIVE_LZOP ARCHIVE_NONE ARCHIVE_PROGRAM
-  ARCHIVE_RPM ARCHIVE_UU ARCHIVE_UUENCODE ARCHIVE_XZ>;
 
 constant ARCHIVE_CREATE         is export = 10;
 constant ARCHIVE_READ_FORMAT    is export = 20;
@@ -30,82 +14,143 @@ constant ARCHIVE_WRITE_FILTER   is export = 50;
 constant ARCHIVE_FILE_NOT_FOUND is export = 60;
 constant ARCHIVE_FILE_FOUND     is export = 70;
 
-our %readformat := {
-  ARCHIVE_7ZIP    => &archive_read_support_format_7zip,
-  ARCHIVE_AR      => &archive_read_support_format_ar,
-  ARCHIVE_CODE    => &archive_read_support_format_by_code,
-  ARCHIVE_CAB     => &archive_read_support_format_cab,
-  ARCHIVE_CPIO    => &archive_read_support_format_cpio,
-  ARCHIVE_EMPTY   => &archive_read_support_format_empty,
-  ARCHIVE_GNUTAR  => &archive_read_support_format_gnutar,
-  ARCHIVE_ISO9660 => &archive_read_support_format_iso9660,
-  ARCHIVE_LHA     => &archive_read_support_format_lha,
-  ARCHIVE_MTREE   => &archive_read_support_format_mtree,
-  ARCHIVE_RAR     => &archive_read_support_format_rar,
-  ARCHIVE_RAW     => &archive_read_support_format_raw,
-  ARCHIVE_TAR     => &archive_read_support_format_tar,
-  ARCHIVE_WARC    => &archive_read_support_format_warc,
-  ARCHIVE_XAR     => &archive_read_support_format_xar,
-  ARCHIVE_ZIP     => &archive_read_support_format_zip,
-};
-our %readfilter := {
-  ARCHIVE_BZIP2    => &archive_read_support_filter_bzip2,
-  ARCHIVE_COMPRESS => &archive_read_support_filter_compress,
-  ARCHIVE_GZIP     => &archive_read_support_filter_gzip,
-  ARCHIVE_GRZIP    => &archive_read_support_filter_grzip,
-  ARCHIVE_LRZIP    => &archive_read_support_filter_lrzip,
-  ARCHIVE_LZ4      => &archive_read_support_filter_lz4,
-  ARCHIVE_LZIP     => &archive_read_support_filter_lzip,
-  ARCHIVE_LZMA     => &archive_read_support_filter_lzma,
-  ARCHIVE_LZOP     => &archive_read_support_filter_lzop,
-  ARCHIVE_NONE     => &archive_read_support_filter_none,
-  ARCHIVE_RPM      => &archive_read_support_filter_rpm,
-  ARCHIVE_UU       => &archive_read_support_filter_uu,
-  ARCHIVE_XZ       => &archive_read_support_filter_xz,
-};
-our %writeformat := {
-  ARCHIVE_7ZIP       => &archive_write_set_format_7zip,
-  ARCHIVE_BSD        => &archive_write_set_format_ar_bsd,
-  ARCHIVE_SVR4       => &archive_write_set_format_ar_svr4,
-  ARCHIVE_CPIO       => &archive_write_set_format_cpio,
-  ARCHIVE_NEWC       => &archive_write_set_format_cpio_newc,
-  ARCHIVE_GNUTAR     => &archive_write_set_format_gnutar,
-  ARCHIVE_ISO9660    => &archive_write_set_format_iso9660,
-  ARCHIVE_MTREE      => &archive_write_set_format_mtree,
-  ARCHIVE_CLASSIC    => &archive_write_set_format_mtree_classic,
-  ARCHIVE_PAX        => &archive_write_set_format_pax,
-  ARCHIVE_RESTRICTED => &archive_write_set_format_pax_restricted,
-  ARCHIVE_RAW        => &archive_write_set_format_raw,
-  ARCHIVE_SHAR       => &archive_write_set_format_shar,
-  ARCHIVE_DUMP       => &archive_write_set_format_shar_dump,
-  ARCHIVE_USTAR      => &archive_write_set_format_ustar,
-  ARCHIVE_V7TAR      => &archive_write_set_format_v7tar,
-  ARCHIVE_WARC       => &archive_write_set_format_warc,
-  ARCHIVE_XAR        => &archive_write_set_format_xar,
-  ARCHIVE_ZIP        => &archive_write_set_format_zip,
-};
-our %writefilter := {
-  ARCHIVE_B64ENCODE => &archive_write_add_filter_b64encode,
-  ARCHIVE_BZIP2     => &archive_write_add_filter_bzip2,
-  ARCHIVE_COMPRESS  => &archive_write_add_filter_compress,
-  ARCHIVE_GRZIP     => &archive_write_add_filter_grzip,
-  ARCHIVE_GZIP      => &archive_write_add_filter_gzip,
-  ARCHIVE_LRZIP     => &archive_write_add_filter_lrzip,
-  ARCHIVE_LZ4       => &archive_write_add_filter_lz4,
-  ARCHIVE_LZIP      => &archive_write_add_filter_lzip,
-  ARCHIVE_LZMA      => &archive_write_add_filter_lzma,
-  ARCHIVE_LZOP      => &archive_write_add_filter_lzop,
-  ARCHIVE_NONE      => &archive_write_add_filter_none,
-  ARCHIVE_PROGRAM   => &archive_write_add_filter_program,
-  ARCHIVE_UUENCODE  => &archive_write_add_filter_uuencode,
-  ARCHIVE_XZ        => &archive_write_add_filter_xz,
-};
+class X::Libarchive is Exception
+{
+  has Int $.errno;
+  has Str $.error;
+
+  method message { "Error {$!errno}: $!error"; }
+}
+
+class Entry
+{
+  has archive_entry $.entry;
+  has archive $.archive;
+
+  submethod BUILD(archive :$archive!, Str :$path?, Int :$size?, Int :$filetype?, Int :$perm?, Int :$operation?)
+  {
+    if $operation ~~ LibarchiveWrite|LibarchiveOverwrite {
+      $!entry = archive_entry_new;
+    } else {
+      $!entry = archive_entry.new;
+    }
+    $!archive := $archive;
+    if $path.defined {
+      self.pathname: $path;
+      self.size: $size // $path.IO.s;
+      self.filetype: $filetype // AE_IFREG;
+      self.perm: $perm // 0o644;
+    }
+  }
+
+  multi method pathname(Str $path)
+  {
+    archive_entry_set_pathname $!entry, $path;
+  }
+
+  multi method pathname(--> Str)
+  {
+    my $res;
+    try {
+      $res = archive_entry_pathname $!entry;
+      CATCH {
+        fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
+      }
+    }
+    return $res;
+  }
+
+  multi method size(Int $size)
+  {
+    archive_entry_set_size $!entry, $size;
+  }
+
+  multi method size(--> int64)
+  {
+    archive_entry_size $!entry;
+  }
+
+  method filetype(Int $type)
+  {
+    archive_entry_set_filetype $!entry, $type;
+  }
+
+  method perm(Int $perm)
+  {
+    archive_entry_set_perm $!entry, $perm;
+  }
+
+  multi method atime(Int $atime)
+  {
+    archive_entry_set_atime $!entry, $atime, 0;
+  }
+
+  multi method atime()
+  {
+    archive_entry_unset_atime $!entry;
+  }
+
+  multi method ctime(Int $ctime)
+  {
+    archive_entry_set_ctime $!entry, $ctime, 0;
+  }
+
+  multi method ctime()
+  {
+    archive_entry_unset_ctime $!entry;
+  }
+
+  multi method mtime(Int $mtime)
+  {
+    archive_entry_set_mtime $!entry, $mtime, 0;
+  }
+
+  multi method mtime()
+  {
+    archive_entry_unset_mtime $!entry;
+  }
+
+  multi method birthtime(Int $birthtime)
+  {
+    archive_entry_set_birthtime $!entry, $birthtime, 0;
+  }
+
+  multi method birthtime()
+  {
+    archive_entry_unset_birthtime $!entry;
+  }
+
+  method uid(Int $uid)
+  {
+    archive_entry_set_uid $!entry, $uid;
+  }
+
+  method gid(Int $gid)
+  {
+    archive_entry_set_gid $!entry, $gid;
+  }
+
+  method uname(Str $uname)
+  {
+    archive_entry_set_uname $!entry, $uname;
+  }
+
+  method gname(Str $gname)
+  {
+    archive_entry_set_gname $!entry, $gname;
+  }
+
+  method free()
+  {
+    archive_entry_free $!entry;
+  }
+}
 
 has archive $.archive;
-has Int $.operation is rw;
-has Archive::Libarchive::Entry $.entry is rw;
+has Int $.operation;
+has Archive::Libarchive::Entry $.entry;
 
-submethod BUILD(LibarchiveOp :$operation!, LibarchiveFormat :$format?, LibarchiveFilter :$filter?, Any :$file?)
+submethod BUILD(LibarchiveOp :$operation!, Any :$file?)
 {
   $!operation = $operation;
   if $!operation == LibarchiveRead {
@@ -113,46 +158,18 @@ submethod BUILD(LibarchiveOp :$operation!, LibarchiveFormat :$format?, Libarchiv
     if ! $!archive.defined {
       fail X::Libarchive.new: errno => ARCHIVE_CREATE, error => 'Error creating libarchive C struct';
     }
-    if ! $format.defined {
-      try {
-        my $res = archive_read_support_format_all self.archive;
-        die unless $res == ARCHIVE_OK;
-        CATCH {
-          fail X::Libarchive.new: errno => $res, error => archive_error_string(self.archive);
-        }
-      }
-    }else{
-      if %readformat{$format}:exists {
-        try {
-          my $res = %readformat{$format}(self.archive);
-          die unless $res == ARCHIVE_OK;
-          CATCH {
-            fail X::Libarchive.new: errno => $res, error => archive_error_string(self.archive);
-          }
-        }
-      }else{
-        fail X::Libarchive.new: errno => ARCHIVE_READ_FORMAT, error => 'Unknown read format';
+    try {
+      my $res = archive_read_support_format_all $!archive;
+      die unless $res == ARCHIVE_OK;
+      CATCH {
+        fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
       }
     }
-    if ! $filter.defined {
-      try {
-        my $res = archive_read_support_filter_all self.archive;
-        die unless $res == ARCHIVE_OK;
-        CATCH {
-          fail X::Libarchive.new: errno => $res, error => archive_error_string(self.archive);
-        }
-      }
-    }else{
-      if %readfilter{$filter}:exists {
-        try {
-          my $res = %readfilter{$filter}(self.archive);
-          die unless $res == ARCHIVE_OK;
-          CATCH {
-            fail X::Libarchive.new: errno => $res, error => archive_error_string(self.archive);
-          }
-        }
-      }else{
-        fail X::Libarchive.new: errno => ARCHIVE_READ_FILTER, error => 'Unknown read filter';
+    try {
+      my $res = archive_read_support_filter_all $!archive;
+      die unless $res == ARCHIVE_OK;
+      CATCH {
+        fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
       }
     }
   } elsif $!operation ~~ LibarchiveWrite|LibarchiveOverwrite {
@@ -160,7 +177,7 @@ submethod BUILD(LibarchiveOp :$operation!, LibarchiveFormat :$format?, Libarchiv
     if ! $!archive.defined {
       fail X::Libarchive.new: errno => ARCHIVE_CREATE, error => 'Error creating libarchive C struct';
     }
-    # TODO format, filter, and compression
+    archive_write_set_format_filter_by_ext $!archive, $file;
   } else {
     fail X::Libarchive.new: errno => ARCHIVE_CREATE, error => 'Wrong operation mode';
   }
@@ -169,49 +186,59 @@ submethod BUILD(LibarchiveOp :$operation!, LibarchiveFormat :$format?, Libarchiv
   }
 }
 
-submethod DESTROY
+method close
 {
-  if self.archive.defined {
-    if self.operation == LibarchiveRead {
-      archive_read_close self.archive;
-      archive_read_free  self.archive;
-    } elsif self.operation == LibarchiveWrite {
-      archive_write_close self.archive;
-      archive_write_free  self.archive;
+  if $!archive.defined {
+    try {
+      my $res;
+      if $!operation == LibarchiveRead {
+        $res = archive_read_close $!archive;
+        die unless $res == ARCHIVE_OK;
+        $res = archive_read_free  $!archive;
+        die unless $res == ARCHIVE_OK;
+      } elsif $!operation ~~ LibarchiveWrite|LibarchiveOverwrite {
+        $res = archive_write_close $!archive;
+        die unless $res == ARCHIVE_OK;
+        $res = archive_write_free  $!archive;
+        die unless $res == ARCHIVE_OK;
+      }
+      CATCH {
+        fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
+      }
     }
   }
 }
 
 multi method open(Str $filename where ! .IO.f, Int $size = 10240)
 {
-  if self.operation ~~ LibarchiveWrite|LibarchiveOverwrite {
+  if $!operation ~~ LibarchiveWrite|LibarchiveOverwrite {
     try {
-      my $res = archive_write_open_filename self.archive, $filename;
+      my $res = archive_write_open_filename $!archive, $filename;
       CATCH {
-        fail X::Libarchive.new: errno => $res, error => archive_error_string(self.archive);
+        fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
       }
     }
-  } elsif self.operation == LibarchiveRead {
+  } elsif $!operation == LibarchiveRead {
     fail X::Libarchive.new: errno => ARCHIVE_FILE_NOT_FOUND, error => 'File not found';
   }
 }
 
 multi method open(Str $filename where .IO.f, Int $size = 10240)
 {
-  if self.operation == LibarchiveRead {
+  if $!operation == LibarchiveRead {
     try {
-      my $res = archive_read_open_filename self.archive, $filename, $size;
+      my $res = archive_read_open_filename $!archive, $filename, $size;
       CATCH {
-        fail X::Libarchive.new: errno => $res, error => archive_error_string(self.archive);
+        fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
       }
     }
-  } elsif self.operation == LibarchiveWrite {
+  } elsif $!operation == LibarchiveWrite {
     fail X::Libarchive.new: errno => ARCHIVE_FILE_FOUND, error => 'File already present';
-  } elsif self.operation == LibarchiveOverwrite {
+  } elsif $!operation == LibarchiveOverwrite {
     try {
-      my $res = archive_write_open_filename self.archive, $filename;
+      my $res = archive_write_open_filename $!archive, $filename;
       CATCH {
-        fail X::Libarchive.new: errno => $res, error => archive_error_string(self.archive);
+        fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
       }
     }
   }
@@ -220,9 +247,9 @@ multi method open(Str $filename where .IO.f, Int $size = 10240)
 multi method open(Buf $data)
 {
   try {
-    my $res = archive_read_open_memory self.archive, $data, $data.bytes;
+    my $res = archive_read_open_memory $!archive, $data, $data.bytes;
     CATCH {
-      fail X::Libarchive.new: errno => $res, error => archive_error_string(self.archive);
+      fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
     }
   }
 }
@@ -230,24 +257,75 @@ multi method open(Buf $data)
 method next-header(--> Bool)
 {
   if ! $!entry.defined {
-    $!entry = Archive::Libarchive::Entry.new;
+    $!entry = Archive::Libarchive::Entry.new(:$!archive);
   }
   my $res;
   try {
-    $res = archive_read_next_header self.archive, self.entry.entry;
+    $res = archive_read_next_header $!archive, $!entry.entry;
     CATCH {
-      fail X::Libarchive.new: errno => $res, error => archive_error_string(self.archive);
+      fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
     }
   }
   return $res == ARCHIVE_OK ?? True !! False;
 }
 
+method write-header(Str $file,
+                    Int :$size? = $file.IO.s,
+                    Int :$type? = AE_IFREG,
+                    Int :$perm? = 0o644,
+                    Int :$atime? = $file.IO.accessed.Int,
+                    Int :$mtime? = $file.IO.modified.Int,
+                    Int :$ctime? = $file.IO.changed.Int,
+                    Int :$birthtime?,
+                    Int :$uid?,
+                    Int :$gid?,
+                    Str :$uname?,
+                    Str :$gname?
+                    --> Bool)
+{
+  $!entry = Archive::Libarchive::Entry.new(:$!archive, :$!operation, :$file);
+  my $res;
+  try {
+    $.entry.pathname($file);
+    $.entry.size($size);
+    $.entry.filetype($type);
+    $.entry.perm($perm);
+    $.entry.atime($atime);
+    $.entry.ctime($ctime);
+    $.entry.mtime($mtime);
+    $.entry.birthtime($birthtime) if $birthtime.defined;
+    $.entry.uid($uid) if $uid.defined;
+    $.entry.gid($gid) if $gid.defined;
+    $.entry.uname($uname) if $uname.defined;
+    $.entry.gname($gname) if $gname.defined;
+    $res = archive_write_header $!archive, $!entry.entry;
+    CATCH {
+      fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
+    }
+  }
+  return $res == ARCHIVE_OK ?? True !! False;
+}
+
+method write-data(Str $path --> Bool)
+{
+  my $fh = open $path, :r;
+  while my $buffer = $fh.read(8192) {
+    my $res = archive_write_data($!archive, $buffer, $buffer.bytes);
+    if $res < 0 {
+      fail X::Libarchive.new: errno => - $res, error => archive_error_string($!archive);
+    }
+  }
+  $fh.close;
+  $.entry.free;
+  return True;
+}
+
 method data-skip
 {
   try {
-    my $res = archive_read_data_skip self.archive;
+    my $res = archive_read_data_skip $!archive;
     CATCH {
-      fail X::Libarchive.new: errno => $res, error => archive_error_string(self.archive);
+      fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
     }
   }
 }

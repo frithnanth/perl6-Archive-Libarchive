@@ -21,5 +21,6 @@ my $am = Archive::Libarchive.new: operation => LibarchiveRead, file => $buffer;
 is $am.WHAT, Archive::Libarchive, 'Create object for reading from memory';
 is $am.next-header, True, 'Read first entry from memory';
 is $am.entry.pathname, 'test1', 'Entry pathname from memory';
+lives-ok { $am.close }, 'Close archive';
 
 done-testing;

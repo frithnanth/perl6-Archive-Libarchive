@@ -11,4 +11,5 @@ sub MAIN(Str :$file! where { .IO.f // die "file '$file' not found" })
     $a.entry.pathname.say;
     $a.data-skip;
   }
+  $a.close;
 }

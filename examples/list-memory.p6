@@ -7,8 +7,9 @@ sub MAIN(Str :$file! where { .IO.f // die "file '$file' not found" })
 {
   my $buffer = slurp $file, :bin;
   my $a = Archive::Libarchive.new: operation => LibarchiveRead, file => $buffer;
-  while $a.next-header {
-    $a.entry.pathname.say;
+  my Archive::Libarchive::Entry $e .= new;
+  while $a.next-header($e) {
+    $e.pathname.say;
     $a.data-skip;
   }
   $a.close;

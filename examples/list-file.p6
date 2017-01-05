@@ -6,8 +6,9 @@ use Archive::Libarchive;
 sub MAIN(Str :$file! where { .IO.f // die "file '$file' not found" })
 {
   my Archive::Libarchive $a .= new: operation => LibarchiveRead, file => $file;
-  while $a.next-header {
-    $a.entry.pathname.say;
+  my Archive::Libarchive::Entry $e .= new;
+  while $a.next-header($e) {
+    $e.pathname.say;
     $a.data-skip;
   }
   $a.close;

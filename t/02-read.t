@@ -13,14 +13,15 @@ throws-like
   'Open file fails';
 my $path = $*PROGRAM-NAME.subst(/ <-[/]>+$/, '');
 lives-ok { $a.open: $path ~ 'test.tar.gz' }, 'Open file succeedes';
-is $a.next-header, True, 'Read first entry from file';
-is $a.entry.pathname, 'test1', 'Entry pathname from file';
+my Archive::Libarchive::Entry $e .= new;
+is $a.next-header($e), True, 'Read first entry from file';
+is $e.pathname, 'test1', 'Entry pathname from file';
 lives-ok { $a.data-skip }, 'Skip file data';
 my $buffer = slurp $path ~ 'test.tar.gz', :bin;
 my $am = Archive::Libarchive.new: operation => LibarchiveRead, file => $buffer;
 is $am.WHAT, Archive::Libarchive, 'Create object for reading from memory';
-is $am.next-header, True, 'Read first entry from memory';
-is $am.entry.pathname, 'test1', 'Entry pathname from memory';
+is $am.next-header($e), True, 'Read first entry from memory';
+is $e.pathname, 'test1', 'Entry pathname from memory';
 lives-ok { $am.close }, 'Close archive';
 
 done-testing;

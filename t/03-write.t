@@ -13,6 +13,7 @@ throws-like
   message => /'File already present'/,
   'Open file fails';
 my $fileout = $path ~ 'test1.tar.gz';
+unlink $fileout if $fileout.IO.e;
 lives-ok { $a.open: $fileout }, 'Open file succeedes';
 $fileout.IO.unlink;
 my Archive::Libarchive $aa .= new: operation => LibarchiveWrite, file => $fileout;

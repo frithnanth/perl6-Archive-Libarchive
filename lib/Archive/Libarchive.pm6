@@ -14,6 +14,7 @@ constant ARCHIVE_WRITE_FORMAT   is export = 40;
 constant ARCHIVE_WRITE_FILTER   is export = 50;
 constant ARCHIVE_FILE_NOT_FOUND is export = 60;
 constant ARCHIVE_FILE_FOUND     is export = 70;
+constant ENTRY_ERROR            is export = 80;
 
 class X::Libarchive is Exception
 {
@@ -26,24 +27,35 @@ class X::Libarchive is Exception
 class Entry
 {
   has archive_entry $.entry;
+  has Int $!operation;
 
   submethod BUILD(Str :$path?, Int :$size?, Int :$filetype?, Int :$perm?, Int :$operation?)
   {
     if $operation ~~ LibarchiveWrite|LibarchiveOverwrite {
       $!entry = archive_entry_new;
+      $!operation = $operation;
+      if $path.defined {
+        self.pathname: $path;
+        self.size: $size // $path.IO.s;
+        self.filetype: $filetype // AE_IFREG;
+        self.perm: $perm // 0o644;
+      }
     } else {
       $!entry = archive_entry.new;
+      $!operation = LibarchiveRead;
     }
-    if $path.defined {
-      self.pathname: $path;
-      self.size: $size // $path.IO.s;
-      self.filetype: $filetype // AE_IFREG;
-      self.perm: $perm // 0o644;
-    }
+  }
+
+  submethod DESTROY
+  {
+    archive_entry_free $!entry if $!entry.defined;
   }
 
   multi method pathname(Str $path)
   {
+    if $!operation == LibarchiveRead {
+      fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
+    }
     archive_entry_set_pathname $!entry, $path;
   }
 
@@ -54,6 +66,9 @@ class Entry
 
   multi method size(Int $size)
   {
+    if $!operation == LibarchiveRead {
+      fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
+    }
     archive_entry_set_size $!entry, $size;
   }
 
@@ -64,83 +79,125 @@ class Entry
 
   method filetype(Int $type)
   {
+    if $!operation == LibarchiveRead {
+      fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
+    }
     archive_entry_set_filetype $!entry, $type;
   }
 
   method perm(Int $perm)
   {
+    if $!operation == LibarchiveRead {
+      fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
+    }
     archive_entry_set_perm $!entry, $perm;
   }
 
   multi method atime(Int $atime)
   {
+    if $!operation == LibarchiveRead {
+      fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
+    }
     archive_entry_set_atime $!entry, $atime, 0;
   }
 
   multi method atime()
   {
+    if $!operation == LibarchiveRead {
+      fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
+    }
     archive_entry_unset_atime $!entry;
   }
 
   multi method ctime(Int $ctime)
   {
+    if $!operation == LibarchiveRead {
+      fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
+    }
     archive_entry_set_ctime $!entry, $ctime, 0;
   }
 
   multi method ctime()
   {
+    if $!operation == LibarchiveRead {
+      fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
+    }
     archive_entry_unset_ctime $!entry;
   }
 
   multi method mtime(Int $mtime)
   {
+    if $!operation == LibarchiveRead {
+      fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
+    }
     archive_entry_set_mtime $!entry, $mtime, 0;
   }
 
   multi method mtime()
   {
+    if $!operation == LibarchiveRead {
+      fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
+    }
     archive_entry_unset_mtime $!entry;
   }
 
   multi method birthtime(Int $birthtime)
   {
+    if $!operation == LibarchiveRead {
+      fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
+    }
     archive_entry_set_birthtime $!entry, $birthtime, 0;
   }
 
   multi method birthtime()
   {
+    if $!operation == LibarchiveRead {
+      fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
+    }
     archive_entry_unset_birthtime $!entry;
   }
 
   method uid(Int $uid)
   {
+    if $!operation == LibarchiveRead {
+      fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
+    }
     archive_entry_set_uid $!entry, $uid;
   }
 
   method gid(Int $gid)
   {
+    if $!operation == LibarchiveRead {
+      fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
+    }
     archive_entry_set_gid $!entry, $gid;
   }
 
   method uname(Str $uname)
   {
+    if $!operation == LibarchiveRead {
+      fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
+    }
     archive_entry_set_uname $!entry, $uname;
   }
 
   method gname(Str $gname)
   {
+    if $!operation == LibarchiveRead {
+      fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
+    }
     archive_entry_set_gname $!entry, $gname;
   }
 
   method free()
   {
     archive_entry_free $!entry;
+    $!entry = Nil;
   }
 }
 
 has archive $.archive;
 has Int $.operation;
-has Archive::Libarchive::Entry $.entry;
 
 submethod BUILD(LibarchiveOp :$operation!, Any :$file?, Int :$flags?)
 {
@@ -248,13 +305,9 @@ multi method open(Buf $data)
   }
 }
 
-# FIXME Make it return the Entry object, so the user program can examine it
-method next-header(--> Bool)
+method next-header(Archive::Libarchive::Entry:D $e! --> Bool)
 {
-  if ! $!entry.defined {
-    $!entry = Archive::Libarchive::Entry.new;
-  }
-  my $res = archive_read_next_header $!archive, $!entry.entry;
+  my $res = archive_read_next_header $!archive, $e.entry;
   if $res != (ARCHIVE_OK, ARCHIVE_EOF).any {
     fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
   }
@@ -275,23 +328,24 @@ method write-header(Str $file,
                     Str :$gname?
                     --> Bool)
 {
-  $!entry = Archive::Libarchive::Entry.new(:$!operation, :$file);
-  $.entry.pathname($file);
-  $.entry.size($size);
-  $.entry.filetype($type);
-  $.entry.perm($perm);
-  $.entry.atime($atime);
-  $.entry.ctime($ctime);
-  $.entry.mtime($mtime);
-  $.entry.birthtime($birthtime) if $birthtime.defined;
-  $.entry.uid($uid) if $uid.defined;
-  $.entry.gid($gid) if $gid.defined;
-  $.entry.uname($uname) if $uname.defined;
-  $.entry.gname($gname) if $gname.defined;
-  my $res = archive_write_header $!archive, $!entry.entry;
+  my $e = Archive::Libarchive::Entry.new(:$!operation, :$file);
+  $e.pathname($file);
+  $e.size($size);
+  $e.filetype($type);
+  $e.perm($perm);
+  $e.atime($atime);
+  $e.ctime($ctime);
+  $e.mtime($mtime);
+  $e.birthtime($birthtime) if $birthtime.defined;
+  $e.uid($uid) if $uid.defined;
+  $e.gid($gid) if $gid.defined;
+  $e.uname($uname) if $uname.defined;
+  $e.gname($gname) if $gname.defined;
+  my $res = archive_write_header $!archive, $e.entry;
   if $res != ARCHIVE_OK {
     fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
   }
+  $e.free;
   return True;
 }
 
@@ -306,7 +360,6 @@ method write-data(Str $path --> Bool)
     }
   }
   $fh.close;
-  $.entry.free;
   return True;
 }
 
@@ -339,37 +392,55 @@ method !copy-data(Archive::Libarchive $ext! --> Bool)
   return True;
 }
 
-multi method extract(Archive::Libarchive $ext!, Str :$regex! --> Bool)
+multi method extract(Archive::Libarchive $ext!, &callback:(Archive::Libarchive::Entry $e --> Bool)! --> Bool)
 {
-}
-
-multi method extract(Archive::Libarchive $ext!, Str $filename! --> Bool)
-{
-}
-
-multi method extract(Archive::Libarchive $ext! --> Bool)
-{
-  if ! $!entry.defined {
-    $!entry = Archive::Libarchive::Entry.new;
-  }
-  my $rres;
-  while ($rres = archive_read_next_header $!archive, $!entry.entry) == ARCHIVE_OK {
+  my $e = Archive::Libarchive::Entry.new;
+  my Bool $res = False;
+  while (my $rres = archive_read_next_header $!archive, $e.entry) == ARCHIVE_OK {
     last if $rres == ARCHIVE_EOF;
     if $rres != ARCHIVE_OK {
       fail X::Libarchive.new: errno => $rres, error => archive_error_string($!archive);
     }
-    my $wres = archive_write_header $ext.archive, $!entry.entry;
+    if &callback($e) {
+      my $wres = archive_write_header $ext.archive, $e.entry;
+      if $wres == ARCHIVE_OK {
+        if $e.size > 0 {
+          self!copy-data: $ext;
+        }
+      } else {
+        fail X::Libarchive.new: errno => $wres, error => archive_error_string($!archive);
+      }
+      my $fres = archive_write_finish_entry $ext.archive;
+      if $fres != ARCHIVE_OK {
+        fail X::Libarchive.new: errno => $fres, error => archive_error_string($!archive);
+      }
+      $res = True;
+    }
+  }
+  return $res;
+}
+
+multi method extract(Archive::Libarchive $ext! --> Bool)
+{
+  my $e = Archive::Libarchive::Entry.new;
+  while (my $rres = archive_read_next_header $!archive, $e.entry) == ARCHIVE_OK {
+    last if $rres == ARCHIVE_EOF;
+    if $rres != ARCHIVE_OK {
+      fail X::Libarchive.new: errno => $rres, error => archive_error_string($!archive);
+    }
+    my $wres = archive_write_header $ext.archive, $e.entry;
     if $wres == ARCHIVE_OK {
-      if $.entry.size > 0 {
+      if $e.size > 0 {
         self!copy-data: $ext;
       }
     } else {
       fail X::Libarchive.new: errno => $wres, error => archive_error_string($!archive);
     }
     my $fres = archive_write_finish_entry $ext.archive;
-    fail X::Libarchive.new: errno => $fres, error => archive_error_string($!archive) if $fres != ARCHIVE_OK;
+    if $fres != ARCHIVE_OK {
+      fail X::Libarchive.new: errno => $fres, error => archive_error_string($!archive);
+    }
   }
-
   return True;
 }
 

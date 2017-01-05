@@ -11,6 +11,7 @@ perl6:
 install:
   - rakudobrew build-panda
   - panda --notests installdeps .
+  - panda install git://github.com/frithnanth/perl6-Archive-Libarchive-Raw
 
 script:
   - perl6 -MPanda::Builder -e 'Panda::Builder.build(~$*CWD)'

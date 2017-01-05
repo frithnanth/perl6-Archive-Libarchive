@@ -14,6 +14,7 @@ throws-like
   'Open file fails';
 my $fileout = $path ~ 'test1.tar.gz';
 lives-ok { $a.open: $fileout }, 'Open file succeedes';
+$fileout.IO.unlink;
 my Archive::Libarchive $aa .= new: operation => LibarchiveWrite, file => $fileout;
 is $aa.WHAT, Archive::Libarchive, 'Create object and file for writing';
 my Archive::Libarchive $ao .= new: operation => LibarchiveOverwrite, file => $fileout;

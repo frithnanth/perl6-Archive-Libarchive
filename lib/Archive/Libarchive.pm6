@@ -1,10 +1,11 @@
 use v6;
 unit class Archive::Libarchive:ver<0.0.1>;
 
-use Archive::Libarchive::Raw;
 use NativeCall;
+use Archive::Libarchive::Raw;
+use Archive::Libarchive::Constants;
 
-enum LibarchiveOp  is export <LibarchiveRead LibarchiveWrite LibarchiveOverwrite>;
+enum LibarchiveOp  is export <LibarchiveRead LibarchiveWrite LibarchiveOverwrite LibarchiveExtract>;
 
 constant ARCHIVE_CREATE         is export = 10;
 constant ARCHIVE_READ_FORMAT    is export = 20;
@@ -25,16 +26,14 @@ class X::Libarchive is Exception
 class Entry
 {
   has archive_entry $.entry;
-  has archive $.archive;
 
-  submethod BUILD(archive :$archive!, Str :$path?, Int :$size?, Int :$filetype?, Int :$perm?, Int :$operation?)
+  submethod BUILD(Str :$path?, Int :$size?, Int :$filetype?, Int :$perm?, Int :$operation?)
   {
     if $operation ~~ LibarchiveWrite|LibarchiveOverwrite {
       $!entry = archive_entry_new;
     } else {
       $!entry = archive_entry.new;
     }
-    $!archive := $archive;
     if $path.defined {
       self.pathname: $path;
       self.size: $size // $path.IO.s;
@@ -50,14 +49,7 @@ class Entry
 
   multi method pathname(--> Str)
   {
-    my $res;
-    try {
-      $res = archive_entry_pathname $!entry;
-      CATCH {
-        fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
-      }
-    }
-    return $res;
+    archive_entry_pathname $!entry;
   }
 
   multi method size(Int $size)
@@ -150,7 +142,7 @@ has archive $.archive;
 has Int $.operation;
 has Archive::Libarchive::Entry $.entry;
 
-submethod BUILD(LibarchiveOp :$operation!, Any :$file?)
+submethod BUILD(LibarchiveOp :$operation!, Any :$file?, Int :$flags?)
 {
   $!operation = $operation;
   if $!operation == LibarchiveRead {
@@ -158,30 +150,31 @@ submethod BUILD(LibarchiveOp :$operation!, Any :$file?)
     if ! $!archive.defined {
       fail X::Libarchive.new: errno => ARCHIVE_CREATE, error => 'Error creating libarchive C struct';
     }
-    try {
-      my $res = archive_read_support_format_all $!archive;
-      die unless $res == ARCHIVE_OK;
-      CATCH {
-        fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
-      }
+    my $res = archive_read_support_format_all $!archive;
+    if $res != ARCHIVE_OK {
+      fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
     }
-    try {
-      my $res = archive_read_support_filter_all $!archive;
-      die unless $res == ARCHIVE_OK;
-      CATCH {
-        fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
-      }
+    $res = archive_read_support_filter_all $!archive;
+    if $res != ARCHIVE_OK {
+      fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
     }
   } elsif $!operation ~~ LibarchiveWrite|LibarchiveOverwrite {
     $!archive = archive_write_new;
     if ! $!archive.defined {
       fail X::Libarchive.new: errno => ARCHIVE_CREATE, error => 'Error creating libarchive C struct';
     }
-    archive_write_set_format_filter_by_ext $!archive, $file;
+  } elsif $!operation == LibarchiveExtract {
+    $!archive = archive_write_disk_new;
+    if ! $!archive.defined {
+      fail X::Libarchive.new: errno => ARCHIVE_CREATE, error => 'Error creating libarchive C struct';
+    }
+    if $flags.defined {
+      self.extract-opts: $flags;
+    }
   } else {
     fail X::Libarchive.new: errno => ARCHIVE_CREATE, error => 'Wrong operation mode';
   }
-  if $file.defined {
+  if $file.defined && $!operation != LibarchiveExtract {
     self.open: $file;
   }
 }
@@ -189,35 +182,42 @@ submethod BUILD(LibarchiveOp :$operation!, Any :$file?)
 method close
 {
   if $!archive.defined {
-    try {
-      my $res;
-      if $!operation == LibarchiveRead {
-        $res = archive_read_close $!archive;
-        die unless $res == ARCHIVE_OK;
-        $res = archive_read_free  $!archive;
-        die unless $res == ARCHIVE_OK;
-      } elsif $!operation ~~ LibarchiveWrite|LibarchiveOverwrite {
-        $res = archive_write_close $!archive;
-        die unless $res == ARCHIVE_OK;
-        $res = archive_write_free  $!archive;
-        die unless $res == ARCHIVE_OK;
-      }
-      CATCH {
-        fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
-      }
+    if $!operation == LibarchiveRead {
+      my $res = archive_read_close $!archive;
+      fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
+      $res = archive_read_free  $!archive;
+      fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
+    } elsif $!operation ~~ LibarchiveWrite|LibarchiveOverwrite|LibarchiveExtract {
+      my $res = archive_write_close $!archive;
+      fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
+      $res = archive_write_free  $!archive;
+      fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
     }
+  }
+}
+
+multi method extract-opts()
+{
+  callwith ARCHIVE_EXTRACT_TIME +| ARCHIVE_EXTRACT_PERM +| ARCHIVE_EXTRACT_ACL +| ARCHIVE_EXTRACT_FFLAGS;
+}
+
+multi method extract-opts(Int $flags!)
+{
+  if $!operation == LibarchiveExtract {
+    my $res = archive_write_disk_set_options $!archive, $flags;
+    fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
+    $res = archive_write_disk_set_standard_lookup $!archive;
+    fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
   }
 }
 
 multi method open(Str $filename where ! .IO.f, Int $size = 10240)
 {
   if $!operation ~~ LibarchiveWrite|LibarchiveOverwrite {
-    try {
-      my $res = archive_write_open_filename $!archive, $filename;
-      CATCH {
-        fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
-      }
-    }
+    my $res = archive_write_set_format_filter_by_ext $!archive, $filename;
+    fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
+    $res = archive_write_open_filename $!archive, $filename;
+    fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
   } elsif $!operation == LibarchiveRead {
     fail X::Libarchive.new: errno => ARCHIVE_FILE_NOT_FOUND, error => 'File not found';
   }
@@ -226,45 +226,37 @@ multi method open(Str $filename where ! .IO.f, Int $size = 10240)
 multi method open(Str $filename where .IO.f, Int $size = 10240)
 {
   if $!operation == LibarchiveRead {
-    try {
-      my $res = archive_read_open_filename $!archive, $filename, $size;
-      CATCH {
-        fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
-      }
+    my $res = archive_read_open_filename $!archive, $filename, $size;
+    if $res != ARCHIVE_OK {
+      fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
     }
   } elsif $!operation == LibarchiveWrite {
     fail X::Libarchive.new: errno => ARCHIVE_FILE_FOUND, error => 'File already present';
   } elsif $!operation == LibarchiveOverwrite {
-    try {
-      my $res = archive_write_open_filename $!archive, $filename;
-      CATCH {
-        fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
-      }
-    }
+    my $res = archive_write_set_format_filter_by_ext $!archive, $filename;
+    fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
+    $res = archive_write_open_filename $!archive, $filename;
+    fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
   }
 }
 
 multi method open(Buf $data)
 {
-  try {
-    my $res = archive_read_open_memory $!archive, $data, $data.bytes;
-    CATCH {
-      fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
-    }
+  my $res = archive_read_open_memory $!archive, $data, $data.bytes;
+  if $res != ARCHIVE_OK {
+    fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
   }
 }
 
+# FIXME Make it return the Entry object, so the user program can examine it
 method next-header(--> Bool)
 {
   if ! $!entry.defined {
-    $!entry = Archive::Libarchive::Entry.new(:$!archive);
+    $!entry = Archive::Libarchive::Entry.new;
   }
-  my $res;
-  try {
-    $res = archive_read_next_header $!archive, $!entry.entry;
-    CATCH {
-      fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
-    }
+  my $res = archive_read_next_header $!archive, $!entry.entry;
+  if $res != (ARCHIVE_OK, ARCHIVE_EOF).any {
+    fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
   }
   return $res == ARCHIVE_OK ?? True !! False;
 }
@@ -283,34 +275,32 @@ method write-header(Str $file,
                     Str :$gname?
                     --> Bool)
 {
-  $!entry = Archive::Libarchive::Entry.new(:$!archive, :$!operation, :$file);
-  my $res;
-  try {
-    $.entry.pathname($file);
-    $.entry.size($size);
-    $.entry.filetype($type);
-    $.entry.perm($perm);
-    $.entry.atime($atime);
-    $.entry.ctime($ctime);
-    $.entry.mtime($mtime);
-    $.entry.birthtime($birthtime) if $birthtime.defined;
-    $.entry.uid($uid) if $uid.defined;
-    $.entry.gid($gid) if $gid.defined;
-    $.entry.uname($uname) if $uname.defined;
-    $.entry.gname($gname) if $gname.defined;
-    $res = archive_write_header $!archive, $!entry.entry;
-    CATCH {
-      fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
-    }
+  $!entry = Archive::Libarchive::Entry.new(:$!operation, :$file);
+  $.entry.pathname($file);
+  $.entry.size($size);
+  $.entry.filetype($type);
+  $.entry.perm($perm);
+  $.entry.atime($atime);
+  $.entry.ctime($ctime);
+  $.entry.mtime($mtime);
+  $.entry.birthtime($birthtime) if $birthtime.defined;
+  $.entry.uid($uid) if $uid.defined;
+  $.entry.gid($gid) if $gid.defined;
+  $.entry.uname($uname) if $uname.defined;
+  $.entry.gname($gname) if $gname.defined;
+  my $res = archive_write_header $!archive, $!entry.entry;
+  if $res != ARCHIVE_OK {
+    fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
   }
-  return $res == ARCHIVE_OK ?? True !! False;
+  return True;
 }
 
 method write-data(Str $path --> Bool)
 {
   my $fh = open $path, :r;
+  my $res;
   while my $buffer = $fh.read(8192) {
-    my $res = archive_write_data($!archive, $buffer, $buffer.bytes);
+    $res = archive_write_data($!archive, $buffer, $buffer.bytes);
     if $res < 0 {
       fail X::Libarchive.new: errno => - $res, error => archive_error_string($!archive);
     }
@@ -320,14 +310,67 @@ method write-data(Str $path --> Bool)
   return True;
 }
 
-method data-skip
+method data-skip(--> Int)
 {
-  try {
-    my $res = archive_read_data_skip $!archive;
-    CATCH {
+  my $res = archive_read_data_skip $!archive;
+  if $res != (ARCHIVE_OK, ARCHIVE_EOF).any {
+    fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
+  }
+  return $res;
+}
+
+method !copy-data(Archive::Libarchive $ext! --> Bool)
+{
+  my $res;
+  my $buff = Pointer[void].new;
+  my int64 $size;
+  my int64 $offset;
+  loop {
+    $res = archive_read_data_block $!archive, $buff, $size, $offset;
+    return True if $res == ARCHIVE_EOF;
+    if $res > ARCHIVE_OK {
+      fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
+    }
+    $res = archive_write_data_block $ext.archive, $buff, $size, $offset;
+    if $res > ARCHIVE_OK {
       fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
     }
   }
+  return True;
+}
+
+multi method extract(Archive::Libarchive $ext!, Str :$regex! --> Bool)
+{
+}
+
+multi method extract(Archive::Libarchive $ext!, Str $filename! --> Bool)
+{
+}
+
+multi method extract(Archive::Libarchive $ext! --> Bool)
+{
+  if ! $!entry.defined {
+    $!entry = Archive::Libarchive::Entry.new;
+  }
+  my $rres;
+  while ($rres = archive_read_next_header $!archive, $!entry.entry) == ARCHIVE_OK {
+    last if $rres == ARCHIVE_EOF;
+    if $rres != ARCHIVE_OK {
+      fail X::Libarchive.new: errno => $rres, error => archive_error_string($!archive);
+    }
+    my $wres = archive_write_header $ext.archive, $!entry.entry;
+    if $wres == ARCHIVE_OK {
+      if $.entry.size > 0 {
+        self!copy-data: $ext;
+      }
+    } else {
+      fail X::Libarchive.new: errno => $wres, error => archive_error_string($!archive);
+    }
+    my $fres = archive_write_finish_entry $ext.archive;
+    fail X::Libarchive.new: errno => $fres, error => archive_error_string($!archive) if $fres != ARCHIVE_OK;
+  }
+
+  return True;
 }
 
 method lib-version

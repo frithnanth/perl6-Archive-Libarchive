@@ -8,8 +8,7 @@
   "name" : "Archive::Libarchive",
   "perl" : "6.*",
   "provides" : {
-    "Archive::Libarchive" : "lib/Archive/Libarchive.pm6",
-    "Archive::Libarchive::Entry" : "lib/Archive/Libarchive/Entry.pm6"
+    "Archive::Libarchive" : "lib/Archive/Libarchive.pm6"
   },
   "resources" : [ ],
   "source-url" : "https://github.com/frithnanth/perl6-Archive-Libarchive",

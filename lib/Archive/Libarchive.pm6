@@ -200,7 +200,7 @@ class Entry
 has archive $.archive;
 has Int $.operation;
 
-submethod BUILD(LibarchiveOp :$operation!, Any :$file?, Int :$flags?)
+submethod BUILD(LibarchiveOp :$operation!, Any :$file?, Int :$flags?, Str :$format?, Str :$filter?)
 {
   $!operation = $operation;
   if $!operation == LibarchiveRead {
@@ -233,7 +233,7 @@ submethod BUILD(LibarchiveOp :$operation!, Any :$file?, Int :$flags?)
     fail X::Libarchive.new: errno => ARCHIVE_CREATE, error => 'Wrong operation mode';
   }
   if $file.defined && $!operation != LibarchiveExtract {
-    self.open: $file;
+    self.open: $file, format => $format, filter => $filter;
   }
 }
 
@@ -291,7 +291,7 @@ multi method open(Str $filename where ! .IO.f, Int :$size = 10240, Str :$format?
   }
 }
 
-multi method open(Str $filename where .IO.f, Int $size = 10240)
+multi method open(Str $filename where .IO.f, Int $size = 10240, Str :$format?, Str :$filter?)
 {
   if $!operation == LibarchiveRead {
     my $res = archive_read_open_filename $!archive, $filename, $size;
@@ -301,8 +301,18 @@ multi method open(Str $filename where .IO.f, Int $size = 10240)
   } elsif $!operation == LibarchiveWrite {
     fail X::Libarchive.new: errno => ARCHIVE_FILE_FOUND, error => 'File already present';
   } elsif $!operation == LibarchiveOverwrite {
-    my $res = archive_write_set_format_filter_by_ext $!archive, $filename;
-    fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
+    my $res;
+    if defined ($format, $filter).all {
+      $res = archive_write_set_format_by_name $!archive, $format;
+      fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
+      $res = archive_write_add_filter_by_name $!archive, $filter;
+      fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
+    } elsif defined ($format, $filter).any {
+      fail X::Libarchive.new: errno => ARCHIVE_OPEN, error => 'Format and filter must be both defined.';
+    } else {
+      $res = archive_write_set_format_filter_by_ext $!archive, $filename;
+      fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
+    }
     $res = archive_write_open_filename $!archive, $filename;
     fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
   }

@@ -16,9 +16,17 @@ my $fileout = $path ~ 'test1.tar.gz';
 $fileout.IO.unlink if $fileout.IO.e;
 lives-ok { $a.open: $fileout, format => 'gnutar', filter => 'gzip' }, 'Open file succeedes';
 $fileout.IO.unlink;
-my Archive::Libarchive $aa .= new: operation => LibarchiveWrite, file => $fileout;
+my Archive::Libarchive $aa .= new:
+  operation => LibarchiveWrite,
+  file => $fileout,
+  format => 'gnutar',
+  filter => 'gzip';
 is $aa.WHAT, Archive::Libarchive, 'Create object and file for writing';
-my Archive::Libarchive $ao .= new: operation => LibarchiveOverwrite, file => $fileout;
+my Archive::Libarchive $ao .= new:
+  operation => LibarchiveOverwrite,
+  file => $fileout,
+  format => 'gnutar',
+  filter => 'gzip';
 is $ao.WHAT, Archive::Libarchive, 'Create object and file for overwriting';
 is $aa.write-header($*PROGRAM-NAME), True, 'Write header';
 is $aa.write-data($*PROGRAM-NAME), True, 'Write data';

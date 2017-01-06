@@ -13,8 +13,13 @@ throws-like
   message => /'File already present'/,
   'Open file fails';
 my $fileout = $path ~ 'test1.tar.gz';
-unlink $fileout if $fileout.IO.e;
-lives-ok { $a.open: $fileout }, 'Open file succeedes';
+$fileout.IO.unlink if $fileout.IO.e;
+my %vers = $a.lib-version;
+if %vers<ver> >= 3002001 {
+  lives-ok { $a.open: $fileout }, 'Open file succeedes';
+} else {
+  lives-ok { $a.open: $fileout, format => 'gnutar', filter => 'gzip' }, 'Open file succeedes';
+}
 $fileout.IO.unlink;
 my Archive::Libarchive $aa .= new: operation => LibarchiveWrite, file => $fileout;
 is $aa.WHAT, Archive::Libarchive, 'Create object and file for writing';

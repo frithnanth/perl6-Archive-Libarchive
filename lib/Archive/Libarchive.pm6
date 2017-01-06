@@ -14,7 +14,8 @@ constant ARCHIVE_WRITE_FORMAT   is export = 40;
 constant ARCHIVE_WRITE_FILTER   is export = 50;
 constant ARCHIVE_FILE_NOT_FOUND is export = 60;
 constant ARCHIVE_FILE_FOUND     is export = 70;
-constant ENTRY_ERROR            is export = 80;
+constant ARCHIVE_OPEN           is export = 80;
+constant ENTRY_ERROR            is export = 90;
 
 class X::Libarchive is Exception
 {
@@ -268,11 +269,21 @@ multi method extract-opts(Int $flags!)
   }
 }
 
-multi method open(Str $filename where ! .IO.f, Int $size = 10240)
+multi method open(Str $filename where ! .IO.f, Int :$size = 10240, Str :$format?, Str :$filter?)
 {
   if $!operation ~~ LibarchiveWrite|LibarchiveOverwrite {
-    my $res = archive_write_set_format_filter_by_ext $!archive, $filename;
-    fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
+    my $res;
+    if defined ($format, $filter).all {
+      $res = archive_write_set_format_by_name $!archive, $format;
+      fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
+      $res = archive_write_add_filter_by_name $!archive, $filter;
+      fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
+    } elsif defined ($format, $filter).any {
+      fail X::Libarchive.new: errno => ARCHIVE_OPEN, error => 'Format and filter must be both defined.';
+    } else {
+      $res = archive_write_set_format_filter_by_ext $!archive, $filename;
+      fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
+    }
     $res = archive_write_open_filename $!archive, $filename;
     fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
   } elsif $!operation == LibarchiveRead {

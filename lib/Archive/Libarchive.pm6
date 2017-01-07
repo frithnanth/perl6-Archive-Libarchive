@@ -239,22 +239,7 @@ submethod BUILD(LibarchiveOp :$operation!, Any :$file?, Int :$flags?, Str :$form
   }
 }
 
-multi method extract-opts()
-{
-  callwith ARCHIVE_EXTRACT_TIME +| ARCHIVE_EXTRACT_PERM +| ARCHIVE_EXTRACT_ACL +| ARCHIVE_EXTRACT_FFLAGS;
-}
-
-multi method extract-opts(Int $flags!)
-{
-  if $!operation == LibarchiveExtract {
-    my $res = archive_write_disk_set_options $!ext, $flags;
-    fail X::Libarchive.new: errno => $res, error => archive_error_string($!ext) unless $res == ARCHIVE_OK;
-    $res = archive_write_disk_set_standard_lookup $!ext;
-    fail X::Libarchive.new: errno => $res, error => archive_error_string($!ext) unless $res == ARCHIVE_OK;
-  }
-}
-
-multi method open(Str $filename where ! .IO.f, Int :$size = 10240, Str :$format?, :@filters?)
+multi method open(Str $filename! where ! .IO.f, Int :$size? = 10240, Str :$format?, :@filters?)
 {
   if $!operation ~~ LibarchiveWrite|LibarchiveOverwrite {
     my $res;
@@ -278,7 +263,7 @@ multi method open(Str $filename where ! .IO.f, Int :$size = 10240, Str :$format?
   }
 }
 
-multi method open(Str $filename where .IO.f, Int $size = 10240, Str :$format?, :@filters?)
+multi method open(Str $filename! where .IO.f, Int :$size? = 10240, Str :$format?, :@filters?)
 {
   if $!operation ~~ LibarchiveRead|LibarchiveExtract {
     my $res = archive_read_open_filename $!archive, $filename, $size;
@@ -307,7 +292,7 @@ multi method open(Str $filename where .IO.f, Int $size = 10240, Str :$format?, :
   }
 }
 
-multi method open(Buf $data)
+multi method open(Buf $data!)
 {
   my $res = archive_read_open_memory $!archive, $data, $data.bytes;
   if $res != ARCHIVE_OK {
@@ -338,6 +323,17 @@ method close
   }
 }
 
+method extract-opts(Int $flags? =
+  ARCHIVE_EXTRACT_TIME +| ARCHIVE_EXTRACT_PERM +| ARCHIVE_EXTRACT_ACL +| ARCHIVE_EXTRACT_FFLAGS)
+{
+  if $!operation == LibarchiveExtract {
+    my $res = archive_write_disk_set_options $!ext, $flags;
+    fail X::Libarchive.new: errno => $res, error => archive_error_string($!ext) unless $res == ARCHIVE_OK;
+    $res = archive_write_disk_set_standard_lookup $!ext;
+    fail X::Libarchive.new: errno => $res, error => archive_error_string($!ext) unless $res == ARCHIVE_OK;
+  }
+}
+
 method next-header(Archive::Libarchive::Entry:D $e! --> Bool)
 {
   my $res = archive_read_next_header $!archive, $e.entry;
@@ -349,7 +345,7 @@ method next-header(Archive::Libarchive::Entry:D $e! --> Bool)
 
 method write-header(Str $file,
                     Int :$size? = $file.IO.s,
-                    Int :$type? = AE_IFREG,
+                    Int :$filetype? = AE_IFREG,
                     Int :$perm? = 0o644,
                     Int :$atime? = $file.IO.accessed.Int,
                     Int :$mtime? = $file.IO.modified.Int,
@@ -364,7 +360,7 @@ method write-header(Str $file,
   my $e = Archive::Libarchive::Entry.new(:$!operation, :$file);
   $e.pathname($file);
   $e.size($size);
-  $e.filetype($type);
+  $e.filetype($filetype);
   $e.perm($perm);
   $e.atime($atime);
   $e.ctime($ctime);
@@ -502,9 +498,21 @@ Archive::Libarchive - High-level bindings to libarchive
 use v6;
 
 use Archive::Libarchive;
+use Archive::Libarchive::Constants;
 
 sub MAIN(:$file! where { .IO.f // die "file '$file' not found" })
 {
+  my Archive::Libarchive $a .= new:
+      operation => LibarchiveExtract,
+      file => $file,
+      flags => ARCHIVE_EXTRACT_TIME +| ARCHIVE_EXTRACT_PERM +| ARCHIVE_EXTRACT_ACL +| ARCHIVE_EXTRACT_FFLAGS;
+  try {
+    $a.extract: sub (Archive::Libarchive::Entry $e --> Bool) { $e.pathname eq 'test2' };
+    CATCH {
+      say "Can't extract files: $_";
+    }
+  }
+  $a.close;
 }
 
 =end code
@@ -518,6 +526,170 @@ As the Libarchive site (L<http://www.libarchive.org/>) states, its implementatio
 =item Read a variety of formats, including tar, pax, cpio, zip, xar, lha, ar, cab, mtree, rar, and ISO images.
 =item Write tar, pax, cpio, zip, xar, ar, ISO, mtree, and shar archives.
 =item Handle automatically archives compressed with gzip, bzip2, lzip, xz, lzma, or compress.
+
+
+=head2 new(LibarchiveOp :$operation!, Any :$file?, Int :$flags?, Str :$format?, :@filters?)
+
+Creates an B<Archive::Libarchive> object. It takes one I<mandatory> argument:
+B<operation>, what kind of operation will be performed.
+
+The list of possible operations is provided by the B<LibarchiveOp> enum:
+
+=item LibarchiveRead: open the archive to list its content.
+=item LibarchiveWrite: create a new archive. The file must not be already present.
+=item LibarchiveOverwrite: create a new archive. The file will be overwritten if present.
+=item LibarchiveExtract: extract the archive content.
+
+When extracting one can specify some options to be applied to the newly created files. The default options are:
+
+B<ARCHIVE_EXTRACT_TIME +| ARCHIVE_EXTRACT_PERM +| ARCHIVE_EXTRACT_ACL +| ARCHIVE_EXTRACT_FFLAGS>
+
+Those constants are defined in Archive::Libarchive::Constants, part of the Archive::Libarchive::Raw
+distribution.
+More details about those operation modes can be found on the libarchive site: L<http://www.libarchive.org/>
+
+If the optional argument B<$file> is provided, then it will be opened; if not provided
+during the initialization, the program must call the B<open> method later.
+
+If the optional B<$format> argument is provided, then the object will select that specific format
+while dealing with the archive.
+
+List of possible formats:
+
+=item 7zip
+=item ar
+=item cab
+=item cpio
+=item empty
+=item gnutar
+=item iso9660
+=item lha
+=item mtree
+=item rar
+=item raw
+=item tar
+=item warc
+=item xar
+=item zip
+
+If the optional B<@filters> parameter is provided, then the object will add those filter to the archive.
+Multiple filters can be specified, so a program can manage a file.tar.gz.uu for example.
+The order of the filters is significant, in order to correctly deal with such files as I<file.tar.uu.gz> and
+I<file.tar.gz.uu>.
+
+List of possible filters:
+
+=item bzip2
+=item compress
+=item gzip
+=item grzip
+=item lrzip
+=item lz4
+=item lzip
+=item lzma
+=item lzop
+=item none
+=item rpm
+=item uu
+=item xz
+
+=head3 Note
+
+Recent versions of libarchive implement an automatic way to determine the best mix of format and filters.
+If one's using a pretty recent libarchive, both $format and @filters may be omitted: the B<new> method will
+determine automatically the right combination of parameters.
+Older versions though don't have that capability and the programmer has to define explicitly both parameters.
+
+=head2 open(Str $filename!, Int :$size?, :$format?, :@filters?)
+=head2 open(Buf $data!)
+
+Opens an archive; the first form is used on files, while the second one is used to open an archive that
+resides in memory.
+
+The first argument is always mandatory, while the other ones might been omitted.
+
+$size is the size of the internal buffer and defaults to 10240 bytes.
+
+=head2 close
+
+Closes the internal archive object, frees the memory and cleans up.
+
+=head2 extract-opts(Int $flags?)
+
+Sets the options for the files created when extracting files from an archive.
+The default options are:
+
+B<ARCHIVE_EXTRACT_TIME +| ARCHIVE_EXTRACT_PERM +| ARCHIVE_EXTRACT_ACL +| ARCHIVE_EXTRACT_FFLAGS>
+
+=head2 next-header(Archive::Libarchive::Entry:D $e! --> Bool)
+
+When reading an archive this method fills the Entry object and returns True till it reaches the end of the archive.
+
+The Entry object is pubblicly defined inside the Archive::Libarchive module. It's initialized this way:
+
+=begin code
+my Archive::Libarchive::Entry $e .= new;
+=end code
+
+So a complete archive lister can be implemented in few lines:
+
+=begin code
+use v6;
+use Archive::Libarchive;
+
+sub MAIN(Str :$file! where { .IO.f // die "file '$file' not found" })
+{
+  my Archive::Libarchive $a .= new: operation => LibarchiveRead, file => $file;
+  my Archive::Libarchive::Entry $e .= new;
+  while $a.next-header($e) {
+    $e.pathname.say;
+    $a.data-skip;
+  }
+  $a.close;
+}
+=end code
+
+=head2 data-skip(--> Int)
+
+When reading an archive this method skips file data to jump to the next header.
+It returns B<ARCHIVE_OK> or B<ARCHIVE_EOF> (defined in Archive::Libarchive::Constants)
+
+=head2 write-header(Str $file, Int :$size?, Int :$filetype?, Int :$perm?, Int :$atime?, Int :$mtime?, Int :$ctime?, Int :$birthtime?, Int :$uid?, Int :$gid?, Str :$uname?, Str :$gname?  --> Bool)
+
+When creating an archive this method writes the header entry for the file being inserted into the archive.
+The only mandatory argument is the file name, every other argument has a reasonable default.
+More details can be found on the libarchive site.
+
+Each optional argument is available as a method of the Archive::Libarchive::Entry object and it can be set when needed.
+
+=head2 write-data(Str $path --> Bool)
+
+When creating an archive this method writes the data for the file being inserted into the archive.
+
+=head2 extract(--> Bool)
+=head2 extract(&callback:(Archive::Libarchive::Entry $e --> Bool)! --> Bool)
+
+When extracting files from an archive this method does all the dirty work.
+If used in the first form it extracts all the files.
+The second form takes a callback function, which receives a Archive::Libarchive::Entry object.
+
+For example, this will extract only the file whose name is I<test2>:
+
+=begin code
+$a.extract: sub (Archive::Libarchive::Entry $e --> Bool) { $e.pathname eq 'test2' };
+=end code
+
+=head2 lib-version
+
+Returns a hash with the version number of libarchive and of each library used internally.
+
+=head2 Errors
+
+When the underlying library returns an error condition, the methods will return a Failure object, which can
+be trapped and the exception can be analyzed and acted upon.
+
+The exception object has two fields: $errno and $error, and return a message stating the error number and
+the associated message as delivered by libarchive.
 
 =head1 Prerequisites
 

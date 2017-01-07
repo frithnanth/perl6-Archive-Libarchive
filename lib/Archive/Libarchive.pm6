@@ -200,7 +200,7 @@ class Entry
 has archive $.archive;
 has Int $.operation;
 
-submethod BUILD(LibarchiveOp :$operation!, Any :$file?, Int :$flags?, Str :$format?, Str :$filter?)
+submethod BUILD(LibarchiveOp :$operation!, Any :$file?, Int :$flags?, Str :$format?, :@filters?)
 {
   $!operation = $operation;
   if $!operation == LibarchiveRead {
@@ -233,7 +233,7 @@ submethod BUILD(LibarchiveOp :$operation!, Any :$file?, Int :$flags?, Str :$form
     fail X::Libarchive.new: errno => ARCHIVE_CREATE, error => 'Wrong operation mode';
   }
   if $file.defined && $!operation != LibarchiveExtract {
-    self.open: $file, format => $format, filter => $filter;
+    self.open: $file, format => $format, filters => @filters;
   }
 }
 
@@ -269,17 +269,19 @@ multi method extract-opts(Int $flags!)
   }
 }
 
-multi method open(Str $filename where ! .IO.f, Int :$size = 10240, Str :$format?, Str :$filter?)
+multi method open(Str $filename where ! .IO.f, Int :$size = 10240, Str :$format?, :@filters?)
 {
   if $!operation ~~ LibarchiveWrite|LibarchiveOverwrite {
     my $res;
-    if defined ($format, $filter).all {
+    if defined ($format, @filters[0]).all {
       $res = archive_write_set_format_by_name $!archive, $format;
       fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
-      $res = archive_write_add_filter_by_name $!archive, $filter;
-      fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
-    } elsif defined ($format, $filter).any {
-      fail X::Libarchive.new: errno => ARCHIVE_OPEN, error => 'Format and filter must be both defined.';
+      for @filters -> $filter {
+        $res = archive_write_add_filter_by_name $!archive, $filter;
+        fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
+      }
+    } elsif defined ($format, @filters[0]).any {
+      fail X::Libarchive.new: errno => ARCHIVE_OPEN, error => 'Both format and filter must be defined.';
     } else {
       $res = archive_write_set_format_filter_by_ext $!archive, $filename;
       fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
@@ -291,7 +293,7 @@ multi method open(Str $filename where ! .IO.f, Int :$size = 10240, Str :$format?
   }
 }
 
-multi method open(Str $filename where .IO.f, Int $size = 10240, Str :$format?, Str :$filter?)
+multi method open(Str $filename where .IO.f, Int $size = 10240, Str :$format?, :@filters?)
 {
   if $!operation == LibarchiveRead {
     my $res = archive_read_open_filename $!archive, $filename, $size;
@@ -302,13 +304,15 @@ multi method open(Str $filename where .IO.f, Int $size = 10240, Str :$format?, S
     fail X::Libarchive.new: errno => ARCHIVE_FILE_FOUND, error => 'File already present';
   } elsif $!operation == LibarchiveOverwrite {
     my $res;
-    if defined ($format, $filter).all {
+    if defined ($format, @filters[0]).all {
       $res = archive_write_set_format_by_name $!archive, $format;
       fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
-      $res = archive_write_add_filter_by_name $!archive, $filter;
-      fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
-    } elsif defined ($format, $filter).any {
-      fail X::Libarchive.new: errno => ARCHIVE_OPEN, error => 'Format and filter must be both defined.';
+      for @filters -> $filter {
+        $res = archive_write_add_filter_by_name $!archive, $filter;
+        fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
+      }
+    } elsif defined ($format, @filters[0]).any {
+      fail X::Libarchive.new: errno => ARCHIVE_OPEN, error => 'Both format and filter must be defined.';
     } else {
       $res = archive_write_set_format_filter_by_ext $!archive, $filename;
       fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;

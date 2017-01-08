@@ -201,7 +201,7 @@ has archive $.archive;
 has archive $!ext;
 has Int $.operation;
 
-submethod BUILD(LibarchiveOp :$operation!, Any :$file?, Int :$flags?, Str :$format?, :@filters?)
+submethod BUILD(LibarchiveOp :$operation!, Any :$file?, Int :$flags?, Str :$format?, :@filters? where .all ~~ Str)
 {
   $!operation = $operation;
   if $!operation ~~ LibarchiveRead|LibarchiveExtract {
@@ -239,7 +239,7 @@ submethod BUILD(LibarchiveOp :$operation!, Any :$file?, Int :$flags?, Str :$form
   }
 }
 
-multi method open(Str $filename! where ! .IO.f, Int :$size? = 10240, Str :$format?, :@filters?)
+multi method open(Str $filename! where ! .IO.f, Int :$size? = 10240, Str :$format?, :@filters? where .all ~~ Str)
 {
   if $!operation ~~ LibarchiveWrite|LibarchiveOverwrite {
     my $res;
@@ -263,7 +263,7 @@ multi method open(Str $filename! where ! .IO.f, Int :$size? = 10240, Str :$forma
   }
 }
 
-multi method open(Str $filename! where .IO.f, Int :$size? = 10240, Str :$format?, :@filters?)
+multi method open(Str $filename! where .IO.f, Int :$size? = 10240, Str :$format?, :@filters? where .all ~~ Str)
 {
   if $!operation ~~ LibarchiveRead|LibarchiveExtract {
     my $res = archive_read_open_filename $!archive, $filename, $size;

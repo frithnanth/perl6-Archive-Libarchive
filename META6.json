@@ -11,7 +11,7 @@
     "Archive::Libarchive" : "lib/Archive/Libarchive.pm6"
   },
   "resources" : [ ],
-  "source-url" : "https://github.com/frithnanth/perl6-Archive-Libarchive",
+  "source-url" : "git://github.com/frithnanth/perl6-Archive-Libarchive",
   "test-depends" : [ ],
   "version" : "*"
 }

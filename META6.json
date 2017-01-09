@@ -1,17 +1,13 @@
 {
-  "authors" : [
-    "Fernando Santagata"
-  ],
-  "build-depends" : [ ],
-  "depends" : [ "Archive::Libarchive::Raw" ],
-  "description" : "High-level bindings to libarchive",
+  "perl" : "6.c",
   "name" : "Archive::Libarchive",
-  "perl" : "6.*",
+  "version" : "0.0.1",
+  "description" : "High-level bindings to libarchive",
+  "depends" : [ "Archive::Libarchive::Raw" ],
+  "test-depends" : [ "Test" ],
   "provides" : {
     "Archive::Libarchive" : "lib/Archive/Libarchive.pm6"
   },
-  "resources" : [ ],
-  "source-url" : "git://github.com/frithnanth/perl6-Archive-Libarchive",
-  "test-depends" : [ ],
-  "version" : "*"
+  "authors" : [ "Fernando Santagata" ],
+  "source-url" : "git://github.com/frithnanth/perl6-Archive-Libarchive"
 }

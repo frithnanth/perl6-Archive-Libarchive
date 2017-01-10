@@ -1,5 +1,5 @@
 use v6;
-unit class Archive::Libarchive:ver<0.0.1>;
+unit class Archive::Libarchive:ver<0.0.2>;
 
 use NativeCall;
 use Archive::Libarchive::Raw;
@@ -247,6 +247,7 @@ multi method open(Str $filename! where ! .IO.f, Int :$size? = 10240, Str :$forma
       $res = archive_write_set_format_by_name $!archive, $format;
       fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
       for @filters -> $filter {
+        next if $filter eq 'none';
         $res = archive_write_add_filter_by_name $!archive, $filter;
         fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
       }

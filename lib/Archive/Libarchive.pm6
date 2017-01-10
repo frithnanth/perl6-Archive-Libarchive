@@ -1,5 +1,5 @@
 use v6;
-unit class Archive::Libarchive:ver<0.0.2>;
+unit class Archive::Libarchive:ver<0.0.3>;
 
 use NativeCall;
 use Archive::Libarchive::Raw;
@@ -375,7 +375,6 @@ method write-header(Str $file,
   if $res != ARCHIVE_OK {
     fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
   }
-  $e.free;
   return True;
 }
 

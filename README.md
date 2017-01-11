@@ -215,8 +215,8 @@ Each optional argument is available as a method of the Archive::Libarchive::Entr
 
 When creating an archive this method writes the data for the file being inserted into the archive.
 
-#### extract(--> Bool)
-#### extract(&callback:(Archive::Libarchive::Entry $e --> Bool)! --> Bool)
+#### extract(Str $destpath? --> Bool)
+#### extract(&callback:(Archive::Libarchive::Entry $e --> Bool)!, Str $destpath? --> Bool)
 
 When extracting files from an archive this method does all the dirty work.
 If used in the first form it extracts all the files.
@@ -225,6 +225,8 @@ The second form takes a callback function, which receives a Archive::Libarchive:
 For example, this will extract only the file whose name is `test2`:
 
 `$a.extract: sub (Archive::Libarchive::Entry $e --> Bool) { $e.pathname eq 'test2' };`
+
+In both cases one can specify the directory into which the files will be extracted.
 
 #### lib-version
 

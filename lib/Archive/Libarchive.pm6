@@ -1,5 +1,5 @@
 use v6;
-unit class Archive::Libarchive:ver<0.0.4>;
+unit class Archive::Libarchive:ver<0.0.5>;
 
 use NativeCall;
 use Archive::Libarchive::Raw;
@@ -49,9 +49,6 @@ class Entry
 
   multi method pathname(Str $path)
   {
-    if $!operation == LibarchiveRead {
-      fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
-    }
     archive_entry_set_pathname $!entry, $path;
   }
 
@@ -416,7 +413,7 @@ method !copy-data(--> Bool)
   return True;
 }
 
-multi method extract(&callback:(Archive::Libarchive::Entry $e --> Bool)! --> Bool)
+multi method extract(&callback:(Archive::Libarchive::Entry $e --> Bool)!, Str $destpath? --> Bool)
 {
   my $e = Archive::Libarchive::Entry.new;
   my Bool $res = False;
@@ -426,6 +423,9 @@ multi method extract(&callback:(Archive::Libarchive::Entry $e --> Bool)! --> Boo
       fail X::Libarchive.new: errno => $rres, error => archive_error_string($!archive);
     }
     if &callback($e) {
+      if $destpath.defined && $destpath ne '' {
+        $e.pathname: $destpath ~ '/' ~ $e.pathname;
+      }
       my $wres = archive_write_header $!ext, $e.entry;
       if $wres == ARCHIVE_OK {
         if $e.size > 0 {
@@ -444,13 +444,16 @@ multi method extract(&callback:(Archive::Libarchive::Entry $e --> Bool)! --> Boo
   return $res;
 }
 
-multi method extract(--> Bool)
+multi method extract(Str $destpath? --> Bool)
 {
   my $e = Archive::Libarchive::Entry.new;
   while (my $rres = archive_read_next_header $!archive, $e.entry) == ARCHIVE_OK {
     last if $rres == ARCHIVE_EOF;
     if $rres != ARCHIVE_OK {
       fail X::Libarchive.new: errno => $rres, error => archive_error_string($!archive);
+    }
+    if $destpath.defined && $destpath ne '' {
+      $e.pathname: $destpath ~ '/' ~ $e.pathname;
     }
     my $wres = archive_write_header $!ext, $e.entry;
     if $wres == ARCHIVE_OK {
@@ -694,8 +697,8 @@ Each optional argument is available as a method of the Archive::Libarchive::Entr
 
 When creating an archive this method writes the data for the file being inserted into the archive.
 
-=head2 extract(--> Bool)
-=head2 extract(&callback:(Archive::Libarchive::Entry $e --> Bool)! --> Bool)
+=head2 extract(Str $destpath? --> Bool)
+=head2 extract(&callback:(Archive::Libarchive::Entry $e --> Bool)!, Str $destpath? --> Bool)
 
 When extracting files from an archive this method does all the dirty work.
 If used in the first form it extracts all the files.
@@ -706,6 +709,8 @@ For example, this will extract only the file whose name is I<test2>:
 =begin code
 $a.extract: sub (Archive::Libarchive::Entry $e --> Bool) { $e.pathname eq 'test2' };
 =end code
+
+In both cases one can specify the directory into which the files will be extracted.
 
 =head2 lib-version
 

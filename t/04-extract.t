@@ -21,9 +21,19 @@ my Archive::Libarchive $a2 .= new:
     operation => LibarchiveExtract,
     file => $filein,
     flags => ARCHIVE_EXTRACT_TIME +| ARCHIVE_EXTRACT_PERM +| ARCHIVE_EXTRACT_ACL +| ARCHIVE_EXTRACT_FFLAGS;
-$a2.extract(sub (Archive::Libarchive::Entry $e --> Bool) { $e.pathname eq 'test2' });
-ok ! 'test1'.IO.e && 'test2'.IO.e && ! 'test3'.IO.e, 'Extract one file';
-'test2'.IO.unlink;
+$a2.extract: 't';
+ok 't/test1'.IO.e && 't/test2'.IO.e && 't/test3'.IO.e, 'Extract into a specified directory';
 $a2.close;
+'t/test1'.IO.unlink;
+'t/test2'.IO.unlink;
+'t/test3'.IO.unlink;
+my Archive::Libarchive $a3 .= new:
+    operation => LibarchiveExtract,
+    file => $filein,
+    flags => ARCHIVE_EXTRACT_TIME +| ARCHIVE_EXTRACT_PERM +| ARCHIVE_EXTRACT_ACL +| ARCHIVE_EXTRACT_FFLAGS;
+$a3.extract(sub (Archive::Libarchive::Entry $e --> Bool) { $e.pathname eq 'test2' }, 't');
+ok ! 't/test1'.IO.e && 't/test2'.IO.e && ! 't/test3'.IO.e, 'Extract one file';
+'t/test2'.IO.unlink;
+$a3.close;
 
 done-testing;

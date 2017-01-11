@@ -72,13 +72,12 @@ during the initialization, the program must call the `open` method later.
 If the optional `$format` argument is provided, then the object will select that specific format
 while dealing with the archive.
 
-List of possible formats:
+List of possible read formats:
 
 * 7zip
 * ar
 * cab
 * cpio
-* empty
 * gnutar
 * iso9660
 * lha
@@ -90,12 +89,29 @@ List of possible formats:
 * xar
 * zip
 
+List of possible write formats:
+
+* 7zip
+* ar
+* cpio
+* gnutar
+* iso9660
+* mtree
+* pax
+* raw
+* shar
+* ustar
+* v7tar
+* warc
+* xar
+* zip
+
 If the optional `@filters` parameter is provided, then the object will add those filter to the archive.
 Multiple filters can be specified, so a program can manage a file.tar.gz.uu for example.
 The order of the filters is significant, in order to correctly deal with such files as file.tar.uu.gz and
 file.tar.gz.uu .
 
-List of possible filters:
+List of possible read filters:
 
 * bzip2
 * compress
@@ -109,6 +125,22 @@ List of possible filters:
 * none
 * rpm
 * uu
+* xz
+
+List of possible write filters:
+
+* b64encode
+* bzip2
+* compress
+* grzip
+* gzip
+* lrzip
+* lz4
+* lzip
+* lzma
+* lzop
+* none
+* uuencode
 * xz
 
 ##### Note

@@ -1,5 +1,5 @@
 use v6;
-unit class Archive::Libarchive:ver<0.0.3>;
+unit class Archive::Libarchive:ver<0.0.4>;
 
 use NativeCall;
 use Archive::Libarchive::Raw;
@@ -45,11 +45,6 @@ class Entry
       $!entry = archive_entry.new;
       $!operation = LibarchiveRead;
     }
-  }
-
-  submethod DESTROY
-  {
-    archive_entry_free $!entry if $!entry.defined;
   }
 
   multi method pathname(Str $path)
@@ -193,7 +188,6 @@ class Entry
   method free()
   {
     archive_entry_free $!entry;
-    $!entry = Nil;
   }
 }
 
@@ -307,12 +301,12 @@ method close
     if $!operation == LibarchiveRead|LibarchiveExtract {
       my $res = archive_read_close $!archive;
       fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
-      $res = archive_read_free  $!archive;
+      $res = archive_read_free $!archive;
       fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
       if $!operation == LibarchiveExtract {
         my $res = archive_write_close $!ext;
         fail X::Libarchive.new: errno => $res, error => archive_error_string($!ext) unless $res == ARCHIVE_OK;
-        $res = archive_write_free  $!ext;
+        $res = archive_write_free $!ext;
         fail X::Libarchive.new: errno => $res, error => archive_error_string($!ext) unless $res == ARCHIVE_OK;
       }
     } elsif $!operation ~~ LibarchiveWrite|LibarchiveOverwrite {
@@ -375,6 +369,7 @@ method write-header(Str $file,
   if $res != ARCHIVE_OK {
     fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
   }
+  $e.free;
   return True;
 }
 
@@ -554,7 +549,7 @@ during the initialization, the program must call the B<open> method later.
 If the optional B<$format> argument is provided, then the object will select that specific format
 while dealing with the archive.
 
-List of possible formats:
+List of possible read formats:
 
 =item 7zip
 =item ar
@@ -572,12 +567,29 @@ List of possible formats:
 =item xar
 =item zip
 
+List of possible write formats:
+
+=item 7zip
+=item ar
+=item cpio
+=item gnutar
+=item iso9660
+=item mtree
+=item pax
+=item raw
+=item shar
+=item ustar
+=item v7tar
+=item warc
+=item xar
+=item zip
+
 If the optional B<@filters> parameter is provided, then the object will add those filter to the archive.
 Multiple filters can be specified, so a program can manage a file.tar.gz.uu for example.
 The order of the filters is significant, in order to correctly deal with such files as I<file.tar.uu.gz> and
 I<file.tar.gz.uu>.
 
-List of possible filters:
+List of possible read filters:
 
 =item bzip2
 =item compress
@@ -591,6 +603,22 @@ List of possible filters:
 =item none
 =item rpm
 =item uu
+=item xz
+
+List of possible write filters:
+
+=item b64encode
+=item bzip2
+=item compress
+=item grzip
+=item gzip
+=item lrzip
+=item lz4
+=item lzip
+=item lzma
+=item lzop
+=item none
+=item uuencode
 =item xz
 
 =head3 Note

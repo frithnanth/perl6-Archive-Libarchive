@@ -11,9 +11,9 @@ lives-ok { $e1.pathname('test.tar.gz') }, 'Set entry pathname';
 $e1.free;
 my Archive::Libarchive::Entry $e2 .= new;
 throws-like
-  { $e2.pathname('test.tar.gz') },
+  { $e2.size(500) },
   X::Libarchive,
   message => /'Read-only entry'/,
-  'Set pathname on read-only entry fails';
+  'Set size on read-only entry fails';
 
 done-testing;

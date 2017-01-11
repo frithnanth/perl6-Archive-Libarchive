@@ -22,7 +22,7 @@ my Archive::Libarchive $a2 .= new:
     file => $filein,
     flags => ARCHIVE_EXTRACT_TIME +| ARCHIVE_EXTRACT_PERM +| ARCHIVE_EXTRACT_ACL +| ARCHIVE_EXTRACT_FFLAGS;
 $a2.extract: 't';
-ok 't/test1'.IO.e && 't/test2'.IO.e && 't/test3'.IO.e, 'Extract into a specified directory';
+ok 't/test1'.IO.e && 't/test2'.IO.e && 't/test3'.IO.e, 'Extract into a specific directory';
 $a2.close;
 't/test1'.IO.unlink;
 't/test2'.IO.unlink;

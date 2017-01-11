@@ -1,5 +1,5 @@
 use v6;
-unit class Archive::Libarchive:ver<0.0.5>;
+unit class Archive::Libarchive:ver<0.0.6>;
 
 use NativeCall;
 use Archive::Libarchive::Raw;
@@ -424,7 +424,7 @@ multi method extract(&callback:(Archive::Libarchive::Entry $e --> Bool)!, Str $d
     }
     if &callback($e) {
       if $destpath.defined && $destpath ne '' {
-        $e.pathname: $destpath ~ '/' ~ $e.pathname;
+        $e.pathname: $*SPEC.catdir($destpath, $e.pathname);
       }
       my $wres = archive_write_header $!ext, $e.entry;
       if $wres == ARCHIVE_OK {
@@ -453,7 +453,7 @@ multi method extract(Str $destpath? --> Bool)
       fail X::Libarchive.new: errno => $rres, error => archive_error_string($!archive);
     }
     if $destpath.defined && $destpath ne '' {
-      $e.pathname: $destpath ~ '/' ~ $e.pathname;
+      $e.pathname: $*SPEC.catdir($destpath, $e.pathname);
     }
     my $wres = archive_write_header $!ext, $e.entry;
     if $wres == ARCHIVE_OK {

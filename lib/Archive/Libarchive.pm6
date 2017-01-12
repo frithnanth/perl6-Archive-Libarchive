@@ -1,5 +1,5 @@
 use v6;
-unit class Archive::Libarchive:ver<0.0.6>;
+unit class Archive::Libarchive:ver<0.0.7>;
 
 use NativeCall;
 use Archive::Libarchive::Raw;
@@ -27,14 +27,15 @@ class X::Libarchive is Exception
 
 class Entry
 {
+  trusts Archive::Libarchive;
   has archive_entry $.entry;
-  has Int $!operation;
+  has Bool $!safe;
 
   submethod BUILD(Str :$path?, Int :$size?, Int :$filetype?, Int :$perm?, Int :$operation?)
   {
     if $operation ~~ LibarchiveWrite|LibarchiveOverwrite {
       $!entry = archive_entry_new;
-      $!operation = $operation;
+      $!safe = True;
       if $path.defined {
         self.pathname: $path;
         self.size: $size // $path.IO.s;
@@ -43,12 +44,20 @@ class Entry
       }
     } else {
       $!entry = archive_entry.new;
-      $!operation = LibarchiveRead;
+      $!safe = False;
     }
+  }
+
+  method !safe
+  {
+    $!safe = True;
   }
 
   multi method pathname(Str $path)
   {
+    if ! $!safe {
+      fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
+    }
     archive_entry_set_pathname $!entry, $path;
   }
 
@@ -59,7 +68,7 @@ class Entry
 
   multi method size(Int $size)
   {
-    if $!operation == LibarchiveRead {
+    if ! $!safe {
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_set_size $!entry, $size;
@@ -72,7 +81,7 @@ class Entry
 
   method filetype(Int $type)
   {
-    if $!operation == LibarchiveRead {
+    if ! $!safe {
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_set_filetype $!entry, $type;
@@ -80,7 +89,7 @@ class Entry
 
   method perm(Int $perm)
   {
-    if $!operation == LibarchiveRead {
+    if ! $!safe {
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_set_perm $!entry, $perm;
@@ -88,7 +97,7 @@ class Entry
 
   multi method atime(Int $atime)
   {
-    if $!operation == LibarchiveRead {
+    if ! $!safe {
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_set_atime $!entry, $atime, 0;
@@ -96,7 +105,7 @@ class Entry
 
   multi method atime()
   {
-    if $!operation == LibarchiveRead {
+    if ! $!safe {
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_unset_atime $!entry;
@@ -104,7 +113,7 @@ class Entry
 
   multi method ctime(Int $ctime)
   {
-    if $!operation == LibarchiveRead {
+    if ! $!safe {
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_set_ctime $!entry, $ctime, 0;
@@ -112,7 +121,7 @@ class Entry
 
   multi method ctime()
   {
-    if $!operation == LibarchiveRead {
+    if ! $!safe {
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_unset_ctime $!entry;
@@ -120,7 +129,7 @@ class Entry
 
   multi method mtime(Int $mtime)
   {
-    if $!operation == LibarchiveRead {
+    if ! $!safe {
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_set_mtime $!entry, $mtime, 0;
@@ -128,7 +137,7 @@ class Entry
 
   multi method mtime()
   {
-    if $!operation == LibarchiveRead {
+    if ! $!safe {
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_unset_mtime $!entry;
@@ -136,7 +145,7 @@ class Entry
 
   multi method birthtime(Int $birthtime)
   {
-    if $!operation == LibarchiveRead {
+    if ! $!safe {
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_set_birthtime $!entry, $birthtime, 0;
@@ -144,7 +153,7 @@ class Entry
 
   multi method birthtime()
   {
-    if $!operation == LibarchiveRead {
+    if ! $!safe {
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_unset_birthtime $!entry;
@@ -152,7 +161,7 @@ class Entry
 
   method uid(Int $uid)
   {
-    if $!operation == LibarchiveRead {
+    if ! $!safe {
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_set_uid $!entry, $uid;
@@ -160,7 +169,7 @@ class Entry
 
   method gid(Int $gid)
   {
-    if $!operation == LibarchiveRead {
+    if ! $!safe {
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_set_gid $!entry, $gid;
@@ -168,7 +177,7 @@ class Entry
 
   method uname(Str $uname)
   {
-    if $!operation == LibarchiveRead {
+    if ! $!safe {
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_set_uname $!entry, $uname;
@@ -176,7 +185,7 @@ class Entry
 
   method gname(Str $gname)
   {
-    if $!operation == LibarchiveRead {
+    if ! $!safe {
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_set_gname $!entry, $gname;
@@ -184,6 +193,9 @@ class Entry
 
   method free()
   {
+    if ! $!safe {
+      fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
+    }
     archive_entry_free $!entry;
   }
 }
@@ -332,6 +344,7 @@ method next-header(Archive::Libarchive::Entry:D $e! --> Bool)
   if $res != (ARCHIVE_OK, ARCHIVE_EOF).any {
     fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
   }
+  $e!Archive::Libarchive::Entry::safe;
   return $res == ARCHIVE_OK ?? True !! False;
 }
 
@@ -424,6 +437,7 @@ multi method extract(&callback:(Archive::Libarchive::Entry $e --> Bool)!, Str $d
     }
     if &callback($e) {
       if $destpath.defined && $destpath ne '' {
+        $e!Archive::Libarchive::Entry::safe;
         $e.pathname: $*SPEC.catdir($destpath, $e.pathname);
       }
       my $wres = archive_write_header $!ext, $e.entry;
@@ -453,6 +467,7 @@ multi method extract(Str $destpath? --> Bool)
       fail X::Libarchive.new: errno => $rres, error => archive_error_string($!archive);
     }
     if $destpath.defined && $destpath ne '' {
+      $e!Archive::Libarchive::Entry::safe;
       $e.pathname: $*SPEC.catdir($destpath, $e.pathname);
     }
     my $wres = archive_write_header $!ext, $e.entry;

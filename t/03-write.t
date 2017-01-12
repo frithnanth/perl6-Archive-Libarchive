@@ -30,9 +30,9 @@ my Archive::Libarchive $ao .= new:
   format => 'gnutar',
   filters => ['gzip'];
 is $ao.WHAT, Archive::Libarchive, 'Create object and file for overwriting';
-is $aa.write-header($*PROGRAM-NAME), True, 'Write header';
-is $aa.write-data($*PROGRAM-NAME), True, 'Write data';
-lives-ok { $aa.close }, 'Close archive';
+is $ao.write-header($*PROGRAM-NAME), True, 'Write header';
+is $ao.write-data($*PROGRAM-NAME), True, 'Write data';
+lives-ok { $ao.close }, 'Close archive';
 $fileout.IO.unlink;
 
 done-testing;

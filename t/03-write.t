@@ -15,6 +15,7 @@ throws-like
 my $fileout = $path ~ 'test1.tar.gz';
 $fileout.IO.unlink if $fileout.IO.e;
 lives-ok { $a.open: $fileout, format => 'gnutar', filters => ['gzip'] }, 'Open file succeedes';
+$a.close;
 $fileout.IO.unlink;
 my Archive::Libarchive $aa .= new:
   operation => LibarchiveWrite,
@@ -22,6 +23,7 @@ my Archive::Libarchive $aa .= new:
   format => 'gnutar',
   filters => ['gzip'];
 is $aa.WHAT, Archive::Libarchive, 'Create object and file for writing';
+$aa.close;
 my Archive::Libarchive $ao .= new:
   operation => LibarchiveOverwrite,
   file => $fileout,

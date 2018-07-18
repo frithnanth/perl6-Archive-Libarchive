@@ -47,12 +47,10 @@ class Entry
       $!safe = False;
     }
   }
-
   method !safe
   {
     $!safe = True;
   }
-
   multi method pathname(Str $path)
   {
     if ! $!safe {
@@ -61,12 +59,10 @@ class Entry
     archive_entry_set_pathname $!entry, $path;
     self;
   }
-
   multi method pathname(--> Str)
   {
     archive_entry_pathname $!entry;
   }
-
   multi method size(Int $size)
   {
     if ! $!safe {
@@ -75,12 +71,10 @@ class Entry
     archive_entry_set_size $!entry, $size;
     self;
   }
-
   multi method size(--> int64)
   {
     archive_entry_size $!entry;
   }
-
   method filetype(Int $type)
   {
     if ! $!safe {
@@ -89,7 +83,6 @@ class Entry
     archive_entry_set_filetype $!entry, $type;
     self;
   }
-
   method perm(Int $perm)
   {
     if ! $!safe {
@@ -98,7 +91,6 @@ class Entry
     archive_entry_set_perm $!entry, $perm;
     self;
   }
-
   multi method atime(Int $atime)
   {
     if ! $!safe {
@@ -107,7 +99,6 @@ class Entry
     archive_entry_set_atime $!entry, $atime, 0;
     self;
   }
-
   multi method atime()
   {
     if ! $!safe {
@@ -116,7 +107,6 @@ class Entry
     archive_entry_unset_atime $!entry;
     self;
   }
-
   multi method ctime(Int $ctime)
   {
     if ! $!safe {
@@ -125,7 +115,6 @@ class Entry
     archive_entry_set_ctime $!entry, $ctime, 0;
     self;
   }
-
   multi method ctime()
   {
     if ! $!safe {
@@ -134,7 +123,6 @@ class Entry
     archive_entry_unset_ctime $!entry;
     self;
   }
-
   multi method mtime(Int $mtime)
   {
     if ! $!safe {
@@ -143,7 +131,6 @@ class Entry
     archive_entry_set_mtime $!entry, $mtime, 0;
     self;
   }
-
   multi method mtime()
   {
     if ! $!safe {
@@ -152,7 +139,6 @@ class Entry
     archive_entry_unset_mtime $!entry;
     self;
   }
-
   multi method birthtime(Int $birthtime)
   {
     if ! $!safe {
@@ -161,7 +147,6 @@ class Entry
     archive_entry_set_birthtime $!entry, $birthtime, 0;
     self;
   }
-
   multi method birthtime()
   {
     if ! $!safe {
@@ -170,7 +155,6 @@ class Entry
     archive_entry_unset_birthtime $!entry;
     self;
   }
-
   method uid(Int $uid)
   {
     if ! $!safe {
@@ -179,7 +163,6 @@ class Entry
     archive_entry_set_uid $!entry, $uid;
     self;
   }
-
   method gid(Int $gid)
   {
     if ! $!safe {
@@ -188,7 +171,6 @@ class Entry
     archive_entry_set_gid $!entry, $gid;
     self;
   }
-
   method uname(Str $uname)
   {
     if ! $!safe {
@@ -197,7 +179,6 @@ class Entry
     archive_entry_set_uname $!entry, $uname;
     self;
   }
-
   method gname(Str $gname)
   {
     if ! $!safe {
@@ -206,7 +187,6 @@ class Entry
     archive_entry_set_gname $!entry, $gname;
     self;
   }
-
   method free()
   {
     if ! $!safe {

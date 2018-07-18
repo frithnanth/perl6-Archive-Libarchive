@@ -241,7 +241,7 @@ The exception object has two fields: $errno and $error, and return a message sta
 the associated message as delivered by libarchive.
 
 ## Prerequisites
-This module requires Archive::Libarchive::Raw Perl6 module and the libarchive library 
+This module requires Archive::Libarchive::Raw Perl6 module and the libarchive library
 to be installed. Please follow the instructions below based on your platform:
 
 ### Debian Linux

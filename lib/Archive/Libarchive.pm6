@@ -1,5 +1,5 @@
 use v6;
-unit class Archive::Libarchive:ver<0.0.7>;
+unit class Archive::Libarchive:ver<0.0.8>;
 
 use NativeCall;
 use Archive::Libarchive::Raw;
@@ -59,6 +59,7 @@ class Entry
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_set_pathname $!entry, $path;
+    self;
   }
 
   multi method pathname(--> Str)
@@ -72,6 +73,7 @@ class Entry
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_set_size $!entry, $size;
+    self;
   }
 
   multi method size(--> int64)
@@ -85,6 +87,7 @@ class Entry
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_set_filetype $!entry, $type;
+    self;
   }
 
   method perm(Int $perm)
@@ -93,6 +96,7 @@ class Entry
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_set_perm $!entry, $perm;
+    self;
   }
 
   multi method atime(Int $atime)
@@ -101,6 +105,7 @@ class Entry
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_set_atime $!entry, $atime, 0;
+    self;
   }
 
   multi method atime()
@@ -109,6 +114,7 @@ class Entry
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_unset_atime $!entry;
+    self;
   }
 
   multi method ctime(Int $ctime)
@@ -117,6 +123,7 @@ class Entry
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_set_ctime $!entry, $ctime, 0;
+    self;
   }
 
   multi method ctime()
@@ -125,6 +132,7 @@ class Entry
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_unset_ctime $!entry;
+    self;
   }
 
   multi method mtime(Int $mtime)
@@ -133,6 +141,7 @@ class Entry
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_set_mtime $!entry, $mtime, 0;
+    self;
   }
 
   multi method mtime()
@@ -141,6 +150,7 @@ class Entry
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_unset_mtime $!entry;
+    self;
   }
 
   multi method birthtime(Int $birthtime)
@@ -149,6 +159,7 @@ class Entry
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_set_birthtime $!entry, $birthtime, 0;
+    self;
   }
 
   multi method birthtime()
@@ -157,6 +168,7 @@ class Entry
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_unset_birthtime $!entry;
+    self;
   }
 
   method uid(Int $uid)
@@ -165,6 +177,7 @@ class Entry
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_set_uid $!entry, $uid;
+    self;
   }
 
   method gid(Int $gid)
@@ -173,6 +186,7 @@ class Entry
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_set_gid $!entry, $gid;
+    self;
   }
 
   method uname(Str $uname)
@@ -181,6 +195,7 @@ class Entry
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_set_uname $!entry, $uname;
+    self;
   }
 
   method gname(Str $gname)
@@ -189,6 +204,7 @@ class Entry
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_set_gname $!entry, $gname;
+    self;
   }
 
   method free()
@@ -265,6 +281,7 @@ multi method open(Str $filename! where ! .IO.f, Int :$size? = 10240, Str :$forma
   } elsif $!operation == LibarchiveRead|LibarchiveExtract {
     fail X::Libarchive.new: errno => ARCHIVE_FILE_NOT_FOUND, error => 'File not found';
   }
+  self;
 }
 
 multi method open(Str $filename! where .IO.f, Int :$size? = 10240, Str :$format?, :@filters? where .all ~~ Str)
@@ -294,6 +311,7 @@ multi method open(Str $filename! where .IO.f, Int :$size? = 10240, Str :$format?
     $res = archive_write_open_filename $!archive, $filename;
     fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive) unless $res == ARCHIVE_OK;
   }
+  self;
 }
 
 multi method open(Buf $data!)
@@ -302,6 +320,7 @@ multi method open(Buf $data!)
   if $res != ARCHIVE_OK {
     fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
   }
+  self;
 }
 
 method close
@@ -336,6 +355,7 @@ method extract-opts(Int $flags? =
     $res = archive_write_disk_set_standard_lookup $!ext;
     fail X::Libarchive.new: errno => $res, error => archive_error_string($!ext) unless $res == ARCHIVE_OK;
   }
+  self;
 }
 
 method next-header(Archive::Libarchive::Entry:D $e! --> Bool)
@@ -532,7 +552,7 @@ sub MAIN(:$file! where { .IO.f // die "file '$file' not found" })
 
 =head1 DESCRIPTION
 
-B<Archive::Libarchive> provides a procedural and a OO interface to libarchive using Archive::Libarchive::Raw.
+B<Archive::Libarchive> provides a procedural and an OO interface to libarchive using Archive::Libarchive::Raw.
 
 As the Libarchive site (L<http://www.libarchive.org/>) states, its implementation is able to:
 
@@ -750,8 +770,7 @@ instructions below based on your platform:
 sudo apt-get install libarchive13
 =end code
 
-The module uses Archive::Libarchive::Raw which looks for a library called libarchive.so, or whatever it finds in
-the environment variable B<PERL6_LIBARCHIVE_LIB> (provided that the library one chooses uses the same API).
+The module uses Archive::Libarchive::Raw which looks for a library called libarchive.so.
 
 =head1 Installation
 

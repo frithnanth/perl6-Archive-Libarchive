@@ -198,7 +198,7 @@ class Entry
 
 has archive $.archive;
 has archive $!ext;
-has Int $.operation;
+has Int     $.operation;
 
 submethod BUILD(LibarchiveOp :$operation!, Any :$file?, Int :$flags?, Str :$format?, :@filters? where .all ~~ Str)
 {

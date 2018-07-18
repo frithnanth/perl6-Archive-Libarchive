@@ -146,7 +146,7 @@ List of possible write filters:
 ##### Note
 
 Recent versions of libarchive implement an automatic way to determine the best mix of format and filters.
-If one's using a pretty recent libarchive, both $format and @filters may be omitted: the `new` method will
+If one is using a pretty recent libarchive, both $format and @filters may be omitted: the `new` method will
 determine automatically the right combination of parameters.
 Older versions though don't have that capability and the programmer has to define explicitly both parameters.
 

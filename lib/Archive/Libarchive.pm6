@@ -552,7 +552,7 @@ sub MAIN(:$file! where { .IO.f // die "file '$file' not found" })
 
 =head1 DESCRIPTION
 
-B<Archive::Libarchive> provides a procedural and an OO interface to libarchive using Archive::Libarchive::Raw.
+B<Archive::Libarchive> provides an OO interface to libarchive using Archive::Libarchive::Raw.
 
 As the Libarchive site (L<http://www.libarchive.org/>) states, its implementation is able to:
 

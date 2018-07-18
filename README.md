@@ -36,7 +36,7 @@ For more examples see the `example` directory.
 
 ## Description
 
-Archive::Libarchive provides a procedural and a OO interface to libarchive using Archive::Libarchive::Raw.
+Archive::Libarchive provides an OO interface to libarchive using Archive::Libarchive::Raw.
 
 As the Libarchive site (http://www.libarchive.org/) states, its implementation is able to:
 

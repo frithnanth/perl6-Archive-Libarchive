@@ -8,6 +8,10 @@ language: perl6
 perl6:
   - '2018.06'
 
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get install libarchive13
+
 install:
   - rakudobrew build-zef && zef install .
 

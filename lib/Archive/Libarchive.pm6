@@ -427,40 +427,30 @@ method !copy-data(--> Bool)
   return True;
 }
 
-method read-file-content(&callback:(Archive::Libarchive::Entry $e --> Bool)! --> Buf)
+method read-file-content(Archive::Libarchive::Entry $e! --> Buf)
 {
-  my $e = Archive::Libarchive::Entry.new;
-  while (my $rres = archive_read_next_header $!archive, $e.entry) == ARCHIVE_OK {
-    last if $rres == ARCHIVE_EOF;
-    if $rres != ARCHIVE_OK {
-      fail X::Libarchive.new: errno => $rres, error => archive_error_string($!archive);
-    }
-    if &callback($e) {
-      $e!Archive::Libarchive::Entry::safe;
-      if $e.size > 0 {
-        my Buf $buf;
-        my $res;
-        my $data = Pointer[void].new;
-        my int64 $size;
-        my int64 $offset;
-        loop {
-          $res = archive_read_data_block $!archive, $data, $size, $offset;
-          if $res == ARCHIVE_EOF | ARCHIVE_OK {
-            my Buf $piece = blob-from-pointer($data, :elems($size), :type(Buf));
-            with $buf {
-              .append($piece);
-            } else {
-              $buf = $piece;
-            }
-            return $buf if $res == ARCHIVE_EOF;
-          } else {
-            fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
-          }
+  if $e.size > 0 {
+    $e!Archive::Libarchive::Entry::safe;
+    my Buf $buf;
+    my $res;
+    my $data = Pointer[void].new;
+    my int64 $size;
+    my int64 $offset;
+    loop {
+      $res = archive_read_data_block $!archive, $data, $size, $offset;
+      if $res == ARCHIVE_EOF | ARCHIVE_OK {
+        my Buf $piece = blob-from-pointer($data, :elems($size), :type(Buf));
+        with $buf {
+          .append($piece);
+        } else {
+          $buf = $piece;
         }
+        return $buf if $res == ARCHIVE_EOF;
+      } else {
+        fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
       }
     }
   }
-  fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'No such entry found';
 }
 
 multi method extract(&callback:(Archive::Libarchive::Entry $e --> Bool)!, Str $destpath? --> Bool)
@@ -737,16 +727,9 @@ sub MAIN(Str :$file! where { .IO.f // die "file '$file' not found" })
 When reading an archive this method skips file data to jump to the next header.
 It returns B<ARCHIVE_OK> or B<ARCHIVE_EOF> (defined in Archive::Libarchive::Constants)
 
-=head2 read-file-content(&callback:(Archive::Libarchive::Entry $e --> Bool)! --> Buf)
+=head2 read-file-content(Archive::Libarchive::Entry $e! --> Buf)
 
-This method read the content of a file specified in the callback function and returns it.
-The callback function receives a Archive::Libarchive::Entry object.
-
-For example, this will extract only the file whose name is I<test2>:
-
-=begin code
-$a.extract: sub (Archive::Libarchive::Entry $e --> Bool) { $e.pathname eq 'test2' };
-=end code
+This method reads the content of a file represented by its Entry object and returns it.
 
 =head2 write-header(Str $file, Int :$size?, Int :$filetype?, Int :$perm?, Int :$atime?, Int :$mtime?, Int :$ctime?, Int :$birthtime?, Int :$uid?, Int :$gid?, Str :$uname?, Str :$gname?  --> Bool)
 
@@ -766,6 +749,12 @@ When creating an archive this method writes the data for the file being inserted
 When extracting files from an archive this method does all the dirty work.
 If used in the first form it extracts all the files.
 The second form takes a callback function, which receives a Archive::Libarchive::Entry object.
+
+For example, this will extract only the file whose name is I<test2>:
+
+=begin code
+$a.extract: sub (Archive::Libarchive::Entry $e --> Bool) { $e.pathname eq 'test2' };
+=end code
 
 In both cases one can specify the directory into which the files will be extracted.
 

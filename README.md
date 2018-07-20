@@ -203,14 +203,9 @@ sub MAIN(Str :$file! where { .IO.f // die "file '$file' not found" })
 When reading an archive this method skips file data to jump to the next header.
 It returns `ARCHIVE_OK` or `ARCHIVE_EOF` (defined in Archive::Libarchive::Constants)
 
-#### read-file-content(&callback:(Archive::Libarchive::Entry $e --> Bool)! --> Buf)
+#### read-file-content(Archive::Libarchive::Entry $e! --> Buf)
 
-This method reads the content of a file specified in the callback function and returns it.
-The callback function receives a Archive::Libarchive::Entry object.
-
-For example, this will extract only the file whose name is `test2`:
-
-`$a.extract: sub (Archive::Libarchive::Entry $e --> Bool) { $e.pathname eq 'test2' };`
+This method reads the content of a file represented by its Entry object and returns it.
 
 #### write-header(Str $file, Int :$size?, Int :$filetype?, Int :$perm?, Int :$atime?, Int :$mtime?, Int :$ctime?, Int :$birthtime?, Int :$uid?, Int :$gid?, Str :$uname?, Str :$gname?  --> Bool)
 
@@ -230,6 +225,11 @@ When creating an archive this method writes the data for the file being inserted
 When extracting files from an archive this method does all the dirty work.
 If used in the first form it extracts all the files.
 The second form takes a callback function, which receives a Archive::Libarchive::Entry object.
+The callback function receives a Archive::Libarchive::Entry object.
+
+For example, this will extract only the file whose name is `test2`:
+
+`$a.extract: sub (Archive::Libarchive::Entry $e --> Bool) { $e.pathname eq 'test2' };`
 
 In both cases one can specify the directory into which the files will be extracted.
 

@@ -205,7 +205,7 @@ It returns `ARCHIVE_OK` or `ARCHIVE_EOF` (defined in Archive::Libarchive::Consta
 
 #### read-file-content(&callback:(Archive::Libarchive::Entry $e --> Bool)! --> Buf)
 
-This method read the content of a file specified in the callback function and returns it.
+This method reads the content of a file specified in the callback function and returns it.
 The callback function receives a Archive::Libarchive::Entry object.
 
 For example, this will extract only the file whose name is `test2`:

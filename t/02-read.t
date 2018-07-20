@@ -23,5 +23,13 @@ is $am.WHAT, Archive::Libarchive, 'Create object for reading from memory';
 is $am.next-header($e), True, 'Read first entry from memory';
 is $e.pathname, 'test1', 'Entry pathname from memory';
 lives-ok { $am.close }, 'Close archive';
+my Archive::Libarchive $a1 .= new: operation => LibarchiveRead, file => 't/test.tar.gz';
+my $content = $a1.read-file-content(sub (Archive::Libarchive::Entry $e --> Bool) { $e.pathname eq 'test2' });
+is $content.decode('utf-8'), "test2\n", 'Read a file into a variable';
+fails-like
+  { $a1.read-file-content(sub (Archive::Libarchive::Entry $e --> Bool) { $e.pathname eq 'notest' }) },
+  X::Libarchive,
+  message => /'No such entry found'/,
+  'Open file fails';
 
 done-testing;

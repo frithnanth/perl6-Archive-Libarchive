@@ -1,5 +1,5 @@
 use v6;
-unit class Archive::Libarchive:ver<0.0.9>;
+unit class Archive::Libarchive:ver<0.0.10>;
 
 use NativeCall;
 use Archive::Libarchive::Raw;
@@ -523,6 +523,7 @@ method lib-version
     liblzma => archive_liblzma_version,
     bzlib   => archive_bzlib_version,
     liblz4  => archive_liblz4_version,
+    libzstd => try { archive_libzstd_version },
   }
 }
 

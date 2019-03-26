@@ -13,13 +13,13 @@ if AUTHOR {
   is %vers<ver>,     '3003003', 'libarchive version';
   is %vers<strver>,  'libarchive 3.3.3', 'libarchive version as string';
   is %vers<details>,
-    'libarchive 3.3.3 zlib/1.2.11 liblzma/5.2.2 bz2lib/1.0.6 liblz4/1.8.2 libzstd/1.3.5',
+    'libarchive 3.3.3 zlib/1.2.11 liblzma/5.2.4 bz2lib/1.0.6 liblz4/1.8.3 libzstd/1.3.8',
     'libarchive version details';
-  is %vers<liblzma>, '5.2.2', 'liblzma version';
-  is %vers<liblz4>,  '1.8.2', 'liblz4 version';
+  is %vers<liblzma>, '5.2.4', 'liblzma version';
+  is %vers<liblz4>,  '1.8.3', 'liblz4 version';
   is %vers<bzlib>,   '1.0.6, 6-Sept-2010', 'bzlib version';
   is %vers<zlib>,    '1.2.11', 'zlib version';
-  is %vers<libzstd>, '1.3.5', 'libzstd version';
+  is %vers<libzstd>, '1.3.8', 'libzstd version';
 }else{
   skip-rest 'Skipping author test';
   exit;

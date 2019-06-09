@@ -1,5 +1,5 @@
 use v6;
-unit class Archive::Libarchive:ver<0.0.10>;
+unit class Archive::Libarchive:ver<0.0.11>;
 
 use NativeCall;
 use Archive::Libarchive::Raw;
@@ -350,6 +350,7 @@ method next-header(Archive::Libarchive::Entry:D $e! --> Bool)
 }
 
 method write-header(Str $file,
+                    Str :$pathname?,
                     Int :$size? = $file.IO.s,
                     Int :$filetype? = AE_IFREG,
                     Int :$perm? = 0o644,
@@ -364,7 +365,7 @@ method write-header(Str $file,
                     --> Bool)
 {
   my $e = Archive::Libarchive::Entry.new(:$!operation, :$file);
-  $e.pathname($file);
+  $e.pathname($pathname // $file);
   $e.size($size);
   $e.filetype($filetype);
   $e.perm($perm);
@@ -732,7 +733,7 @@ It returns B<ARCHIVE_OK> or B<ARCHIVE_EOF> (defined in Archive::Libarchive::Cons
 
 This method reads the content of a file represented by its Entry object and returns it.
 
-=head2 write-header(Str $file, Int :$size?, Int :$filetype?, Int :$perm?, Int :$atime?, Int :$mtime?, Int :$ctime?, Int :$birthtime?, Int :$uid?, Int :$gid?, Str :$uname?, Str :$gname?  --> Bool)
+=head2 write-header(Str $file, Str :$pathname?, Int :$size?, Int :$filetype?, Int :$perm?, Int :$atime?, Int :$mtime?, Int :$ctime?, Int :$birthtime?, Int :$uid?, Int :$gid?, Str :$uname?, Str :$gname?  --> Bool)
 
 When creating an archive this method writes the header entry for the file being inserted into the archive.
 The only mandatory argument is the file name, every other argument has a reasonable default.

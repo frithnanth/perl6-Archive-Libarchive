@@ -207,7 +207,7 @@ It returns `ARCHIVE_OK` or `ARCHIVE_EOF` (defined in Archive::Libarchive::Consta
 
 This method reads the content of a file represented by its Entry object and returns it.
 
-#### write-header(Str $file, Int :$size?, Int :$filetype?, Int :$perm?, Int :$atime?, Int :$mtime?, Int :$ctime?, Int :$birthtime?, Int :$uid?, Int :$gid?, Str :$uname?, Str :$gname?  --> Bool)
+#### write-header(Str $file, Str :$pathname?, Int :$size?, Int :$filetype?, Int :$perm?, Int :$atime?, Int :$mtime?, Int :$ctime?, Int :$birthtime?, Int :$uid?, Int :$gid?, Str :$uname?, Str :$gname?  --> Bool)
 
 When creating an archive this method writes the header entry for the file being inserted into the archive.
 The only mandatory argument is the file name, every other argument has a reasonable default.

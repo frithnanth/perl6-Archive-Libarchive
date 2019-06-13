@@ -1,5 +1,5 @@
 use v6;
-unit class Archive::Libarchive:ver<0.0.11>;
+unit class Archive::Libarchive:ver<0.0.12>;
 
 use NativeCall;
 use Archive::Libarchive::Raw;
@@ -32,7 +32,7 @@ class Entry
   has archive_entry $.entry;
   has Bool $!safe;
 
-  submethod BUILD(Str :$path?, Int :$size?, Int :$filetype?, Int :$perm?, Int :$operation?)
+  submethod BUILD(Str :$path?, Int :$size?, Int :$filetype?, Int :$perm?, Int :$uid?, Str :$gname, Int :$operation?)
   {
     if $operation ~~ LibarchiveWrite|LibarchiveOverwrite {
       $!entry = archive_entry_new;
@@ -76,7 +76,7 @@ class Entry
   {
     archive_entry_size $!entry;
   }
-  method filetype(Int $type)
+  multi method filetype(Int $type)
   {
     if ! $!safe {
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
@@ -84,13 +84,33 @@ class Entry
     archive_entry_set_filetype $!entry, $type;
     self;
   }
-  method perm(Int $perm)
+  multi method filetype(--> int64)
+  {
+    archive_entry_filetype $!entry;
+  }
+  multi method mode(Int $mode)
+  {
+    if ! $!safe {
+      fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
+    }
+    archive_entry_set_perm $!entry, $mode;
+    self;
+  }
+  multi method mode(--> int64)
+  {
+    archive_entry_mode $!entry;
+  }
+  multi method perm(Int $perm)
   {
     if ! $!safe {
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_set_perm $!entry, $perm;
     self;
+  }
+  multi method perm(--> int64)
+  {
+    archive_entry_perm $!entry;
   }
   multi method atime(Int $atime)
   {
@@ -156,7 +176,7 @@ class Entry
     archive_entry_unset_birthtime $!entry;
     self;
   }
-  method uid(Int $uid)
+  multi method uid(Int $uid)
   {
     if ! $!safe {
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
@@ -164,7 +184,11 @@ class Entry
     archive_entry_set_uid $!entry, $uid;
     self;
   }
-  method gid(Int $gid)
+  multi method uid(--> int64)
+  {
+    archive_entry_uid $!entry;
+  }
+  multi method gid(Int $gid)
   {
     if ! $!safe {
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
@@ -172,7 +196,11 @@ class Entry
     archive_entry_set_gid $!entry, $gid;
     self;
   }
-  method uname(Str $uname)
+  multi method gid(--> int64)
+  {
+    archive_entry_gid $!entry;
+  }
+  multi method uname(Str $uname)
   {
     if ! $!safe {
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
@@ -180,13 +208,21 @@ class Entry
     archive_entry_set_uname $!entry, $uname;
     self;
   }
-  method gname(Str $gname)
+  multi method uname(--> Str)
+  {
+    archive_entry_uname $!entry;
+  }
+  multi method gname(Str $gname)
   {
     if ! $!safe {
       fail X::Libarchive.new: errno => ENTRY_ERROR, error => 'Read-only entry';
     }
     archive_entry_set_gname $!entry, $gname;
     self;
+  }
+  multi method gname(--> Str)
+  {
+    archive_entry_gname $!entry;
   }
   method free()
   {

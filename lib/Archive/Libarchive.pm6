@@ -32,7 +32,7 @@ class Entry
   has archive_entry $.entry;
   has Bool $!safe;
 
-  submethod BUILD(Str :$path?, Int :$size?, Int :$filetype?, Int :$perm?, Int :$uid?, Str :$gname, Int :$operation?)
+  submethod BUILD(Str :$path?, Int :$size?, Int :$filetype?, Int :$perm?, Int :$operation?)
   {
     if $operation ~~ LibarchiveWrite|LibarchiveOverwrite {
       $!entry = archive_entry_new;

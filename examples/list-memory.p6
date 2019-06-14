@@ -9,7 +9,7 @@ sub MAIN(Str :$file! where { .IO.f // die "file '$file' not found" })
   my $a = Archive::Libarchive.new: operation => LibarchiveRead, file => $buffer;
   my Archive::Libarchive::Entry $e .= new;
   while $a.next-header($e) {
-    $e.pathname.say;
+    say "{$e.pathname} {$e.size}";
     $a.data-skip;
   }
   $a.close;

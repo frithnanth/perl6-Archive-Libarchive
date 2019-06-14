@@ -3,6 +3,9 @@
 use Test;
 use lib 'lib';
 use Archive::Libarchive;
+use Archive::Libarchive::Constants;
+
+constant AUTHOR = ?%*ENV<TEST_AUTHOR>;
 
 my Archive::Libarchive $a .= new: operation => LibarchiveRead;
 is $a.WHAT, Archive::Libarchive, 'Create object for reading';
@@ -15,7 +18,18 @@ my $path = $*PROGRAM-NAME.subst(/ <-[/]>+$/, '');
 lives-ok { $a.open: $path ~ 'test.tar.gz' }, 'Open file succeedes';
 my Archive::Libarchive::Entry $e .= new;
 is $a.next-header($e), True, 'Read first entry from file';
-is $e.pathname, 'test1', 'Entry pathname from file';
+is $e.pathname, 'test1', 'Entry pathname';
+cmp-ok $e.filetype, '==', AE_IFREG, 'Entry filetype';
+cmp-ok $e.perm, '==', 0o644, 'Entry permission bits';
+cmp-ok $e.mode, '==', 0o100644, 'Entry mode'; # AE_IFREG + 0o644
+cmp-ok $e.uid, '==', 1000, 'Entry uid';
+cmp-ok $e.gid, '==', 1000, 'Entry gid';
+if AUTHOR {
+  is $e.uname, 'nando', 'Entry uid as text';
+  is $e.gname, 'nando', 'Entry gid as text';
+}else{
+  skip 'Skipping author test';
+}
 lives-ok { $a.data-skip }, 'Skip file data';
 my $buffer = slurp $path ~ 'test.tar.gz', :bin;
 my $am = Archive::Libarchive.new: operation => LibarchiveRead, file => $buffer;

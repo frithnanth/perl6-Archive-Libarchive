@@ -288,6 +288,10 @@ module.
 
 Fernando Santagata
 
+## Contributions
+
+Many thanks to Haythem Elganiny for implementing some multi methods in the `Entry` class.
+
 ## Copyright and license
 
 The Artistic License 2.0

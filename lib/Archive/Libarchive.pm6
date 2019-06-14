@@ -842,6 +842,10 @@ $ prove -e "perl6 -Ilib"
 
 Fernando Santagata
 
+=head1 Contributions
+
+Many thanks to Haythem Elganiny for implementing some multi methods in the B<Entry> class.
+
 =head1 License
 
 The Artistic License 2.0

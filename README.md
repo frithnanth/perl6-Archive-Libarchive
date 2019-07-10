@@ -211,6 +211,8 @@ This method reads the content of a file represented by its Entry object and retu
 
 When creating an archive this method writes the header entry for the file being inserted into the archive.
 The only mandatory argument is the file name, every other argument has a reasonable default.
+If the being inserted into the archive is a symbolic link, the target will be composed as a pathname relative to the
+base directory of the file, not as a full pathname.
 More details can be found on the libarchive site.
 
 Each optional argument is available as a method of the Archive::Libarchive::Entry object and it can be set when needed.

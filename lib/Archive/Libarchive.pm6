@@ -1,5 +1,5 @@
 use v6;
-unit class Archive::Libarchive:ver<0.0.12>;
+unit class Archive::Libarchive:ver<0.0.13>;
 
 use NativeCall;
 use Archive::Libarchive::Raw;
@@ -413,6 +413,7 @@ method write-header(Str $file,
   $e.gid($gid) with $gid;
   $e.uname($uname) with $uname;
   $e.gname($gname) with $gname;
+  archive_entry_set_symlink($e.entry, $file.IO.resolve.relative($file.IO.dirname)) if $filetype == AE_IFLNK;
   my $res = archive_write_header $!archive, $e.entry;
   if $res != ARCHIVE_OK {
     fail X::Libarchive.new: errno => $res, error => archive_error_string($!archive);
@@ -773,6 +774,8 @@ This method reads the content of a file represented by its Entry object and retu
 
 When creating an archive this method writes the header entry for the file being inserted into the archive.
 The only mandatory argument is the file name, every other argument has a reasonable default.
+If the being inserted into the archive is a symbolic link, the target will be composed as a pathname relative to the
+base directory of the file, not as a full pathname.
 More details can be found on the libarchive site.
 
 Each optional argument is available as a method of the Archive::Libarchive::Entry object and it can be set when needed.

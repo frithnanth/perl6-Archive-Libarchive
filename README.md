@@ -217,9 +217,29 @@ More details can be found on the libarchive site.
 
 Each optional argument is available as a method of the Archive::Libarchive::Entry object and it can be set when needed.
 
+Note: `write-header` has a lot of optional arguments whose values are collected from the file one is adding to the
+archive. When using the second form of `write-data` one has to provide at least these arguments:
+
+* $size
+* $atime
+* $mtime
+* $ctime
+
+For example:
+
+```Perl6
+$a.write-header($filename,
+                :size($buffer.bytes),
+                :atime(now.Int),
+                :mtime(now.Int),
+                :ctime(now.Int));
+```
+
 #### write-data(Str $path --> Bool)
+#### write-data(Buf $data --> Bool)
 
 When creating an archive this method writes the data for the file being inserted into the archive.
+`$path` is the pathname of the file to be archived, while `$data` is a data buffer.
 
 #### extract(Str $destpath? --> Bool)
 #### extract(&callback:(Archive::Libarchive::Entry $e --> Bool)!, Str $destpath? --> Bool)

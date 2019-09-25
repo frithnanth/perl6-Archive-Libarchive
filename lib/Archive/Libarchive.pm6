@@ -1,5 +1,5 @@
 use v6;
-unit class Archive::Libarchive:ver<0.0.13>;
+unit class Archive::Libarchive:ver<0.0.14>;
 
 use NativeCall;
 use Archive::Libarchive::Raw;
@@ -422,17 +422,23 @@ method write-header(Str $file,
   return True;
 }
 
-method write-data(Str $path --> Bool)
+multi method write-data(Str $path --> Bool)
 {
   my $fh = open $path, :r;
   my $res;
   while my $buffer = $fh.read(8192) {
     $res = archive_write_data($!archive, $buffer, $buffer.bytes);
-    if $res < 0 {
-      fail X::Libarchive.new: errno => - $res, error => archive_error_string($!archive);
-    }
+    fail X::Libarchive.new: errno => - $res, error => archive_error_string($!archive) if $res < 0;
   }
   $fh.close;
+  return True;
+}
+
+multi method write-data(Buf $data --> Bool)
+{
+  my $res;
+  $res = archive_write_data($!archive, $data, $data.bytes);
+  fail X::Libarchive.new: errno => - $res, error => archive_error_string($!archive) if $res < 0;
   return True;
 }
 
@@ -780,9 +786,29 @@ More details can be found on the libarchive site.
 
 Each optional argument is available as a method of the Archive::Libarchive::Entry object and it can be set when needed.
 
+I<Note> B<write-header> has a lot of optional arguments whose values are collected from the file one is adding to the
+archive. When using the second form of B<write-data> one has to provide at least these arguments:
+
+=item $size
+=item $atime
+=item $mtime
+=item $ctime
+
+For example:
+
+=begin code
+$a.write-header($filename,
+                :size($buffer.bytes),
+                :atime(now.Int),
+                :mtime(now.Int),
+                :ctime(now.Int));
+=end code
+
 =head2 write-data(Str $path --> Bool)
+=head2 write-data(Buf $data --> Bool)
 
 When creating an archive this method writes the data for the file being inserted into the archive.
+B<$path> is the pathname of the file to be archived, while B<$data> is a data buffer.
 
 =head2 extract(Str $destpath? --> Bool)
 =head2 extract(&callback:(Archive::Libarchive::Entry $e --> Bool)!, Str $destpath? --> Bool)

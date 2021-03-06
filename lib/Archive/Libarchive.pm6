@@ -723,10 +723,20 @@ Older versions though don't have that capability and the programmer has to defin
 
 Opens an archive; the first form is used on files, while the second one is used to open an archive that
 resides in memory.
-
 The first argument is always mandatory, while the other ones might been omitted.
+B<$size> is the size of the internal buffer and defaults to 10240 bytes.
 
-$size is the size of the internal buffer and defaults to 10240 bytes.
+B<Note:> this module does't apply B<$*CWD> to the file name under the hood, so this will create a file in the
+original directory.
+
+=begin code
+use Archive::Libarchive;
+
+my Archive::Libarchive $a .= new: operation => LibarchiveWrite;
+chdir 'subdir';
+$a.open: 'file.tar.gz', format => 'gnutar', filters => ['gzip'];
+…
+=end code
 
 =head2 close
 
@@ -752,7 +762,6 @@ my Archive::Libarchive::Entry $e .= new;
 So a complete archive lister can be implemented in few lines:
 
 =begin code
-use v6;
 use Archive::Libarchive;
 
 sub MAIN(Str :$file! where { .IO.f // die "file '$file' not found" })
@@ -857,14 +866,6 @@ To install it using zef (a module management tool):
 =begin code
 $ zef update
 $ zef install Archive::Libarchive
-=end code
-
-=head1 Testing
-
-To run the tests:
-
-=begin code
-$ prove -e "perl6 -Ilib"
 =end code
 
 =head1 Author

@@ -10,7 +10,7 @@ Archive::Libarchive - OO interface to libarchive.
 
 ## Example
 
-```Perl6
+```raku
 use v6;
 
 use Archive::Libarchive;
@@ -155,10 +155,20 @@ Older versions though don't have that capability and the programmer has to defin
 
 Opens an archive; the first form is used on files, while the second one is used to open an archive that
 resides in memory.
-
 The first argument is always mandatory, while the other ones might been omitted.
+`$size` is the size of the internal buffer and defaults to 10240 bytes.
 
-$size is the size of the internal buffer and defaults to 10240 bytes.
+`Note:` this module does't apply `$*CWD` to the file name under the hood, so this will create a file in the
+original directory.
+
+```raku
+use Archive::Libarchive;
+
+my Archive::Libarchive $a .= new: operation => LibarchiveWrite;
+chdir 'subdir';
+$a.open: 'file.tar.gz', format => 'gnutar', filters => ['gzip'];
+…
+```
 
 #### close
 
@@ -181,7 +191,7 @@ The Entry object is pubblicly defined inside the Archive::Libarchive module. It'
 
 So a complete archive lister can be implemented in few lines:
 
-```Perl6
+```raku
 use v6;
 use Archive::Libarchive;
 
@@ -227,7 +237,7 @@ archive. When using the second form of `write-data` one has to provide at least 
 
 For example:
 
-```Perl6
+```raku
 $a.write-header($filename,
                 :size($buffer.bytes),
                 :atime(now.Int),
@@ -268,7 +278,7 @@ The exception object has two fields: $errno and $error, and return a message sta
 the associated message as delivered by libarchive.
 
 ## Prerequisites
-This module requires Archive::Libarchive::Raw Perl6 module and the libarchive library
+This module requires Archive::Libarchive::Raw Raku module and the libarchive library
 to be installed. Please follow the instructions below based on your platform:
 
 ### Debian Linux
@@ -290,18 +300,10 @@ $ zef update
 $ zef install Archive::Libarchive
 ```
 
-## Testing
-
-To run the tests:
-
-```
-$ prove -e "perl6 -Ilib"
-```
-
 ## Note
 
 Archive::Libarchive::Raw and in turn this module rely on a C library which might not be present in one's
-installation, so it's not a substitute for a pure Perl6 module.
+installation, so it's not a substitute for a pure Raku module.
 
 This is a OO interface to the functions provided by the C library, accessible through the Archive::Libarchive::Raw
 module.

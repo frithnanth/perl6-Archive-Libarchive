@@ -1,0 +1,26 @@
+#!/usr/bin/env raku
+
+use lib 'lib';
+use Archive::Libarchive;
+use Test;
+plan 8;
+
+constant AUTHOR = ?%*ENV<TEST_AUTHOR>;
+
+if AUTHOR {
+  my Archive::Libarchive $a .= new(operation => LibarchiveRead);
+  my %vers = $a.lib-version;
+  is %vers<ver>,     '3005002', 'libarchive version';
+  is %vers<strver>,  'libarchive 3.5.2', 'libarchive version as string';
+  is %vers<details>,
+    'libarchive 3.5.2 zlib/1.2.11 liblzma/5.2.5 bz2lib/1.0.8 liblz4/1.9.3 libzstd/1.4.8',
+    'libarchive version details';
+  is %vers<liblzma>, '5.2.5', 'liblzma version';
+  is %vers<liblz4>,  '1.9.3', 'liblz4 version';
+  is %vers<bzlib>,   '1.0.8, 13-Jul-2019', 'bzlib version';
+  is %vers<zlib>,    '1.2.11', 'zlib version';
+  is %vers<libzstd>, '1.4.8', 'libzstd version';
+}else{
+  skip-rest 'Skipping author test';
+  exit;
+}

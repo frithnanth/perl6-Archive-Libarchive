@@ -7,7 +7,7 @@
   "depends" : [ "Archive::Libarchive::Raw", "NativeHelpers::Blob" ],
   "test-depends" : [ "Test" ],
   "provides" : {
-    "Archive::Libarchive" : "lib/Archive/Libarchive.pm6"
+    "Archive::Libarchive" : "lib/Archive/Libarchive.rakumod"
   },
   "authors" : [ "Fernando Santagata" ],
   "license": "Artistic-2.0",

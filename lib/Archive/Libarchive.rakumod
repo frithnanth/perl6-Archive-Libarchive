@@ -455,7 +455,7 @@ method !copy-data(--> Bool)
 {
   my $res;
   my $buff = Pointer[void].new;
-  my int64 $size;
+  my size_t $size;
   my int64 $offset;
   loop {
     $res = archive_read_data_block $!archive, $buff, $size, $offset;
@@ -478,7 +478,7 @@ method read-file-content(Archive::Libarchive::Entry $e! --> Buf)
     my Buf $buf;
     my $res;
     my $data = Pointer[void].new;
-    my int64 $size;
+    my size_t $size;
     my int64 $offset;
     loop {
       $res = archive_read_data_block $!archive, $data, $size, $offset;

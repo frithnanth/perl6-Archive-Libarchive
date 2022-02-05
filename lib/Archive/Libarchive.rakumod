@@ -1,5 +1,5 @@
 use v6;
-unit class Archive::Libarchive:ver<0.0.15>:auth<zef:FRITH>;
+unit class Archive::Libarchive:ver<0.0.16>:auth<zef:FRITH>;
 
 use NativeCall;
 use Archive::Libarchive::Raw;

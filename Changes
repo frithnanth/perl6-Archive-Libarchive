@@ -2,5 +2,7 @@
 Revision history for Archive-Libarchive
 
 {{$NEXT}}
+
+0.0.16  2022-02-05T15:57:10+01:00
     - Switch to zef ecosystem
     - Use App::Mi6

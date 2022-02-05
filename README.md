@@ -4,9 +4,7 @@ Archive::Libarchive - OO interface to libarchive.
 
 ## Build Status
 
-| Operating System  |   Build Status  | CI Provider |
-| ----------------- | --------------- | ----------- |
-| Linux             | [![Build Status](https://travis-ci.org/frithnanth/perl6-Archive-Libarchive.svg?branch=master)](https://travis-ci.org/frithnanth/perl6-Archive-Libarchive)  | Travis CI |
+[![Actions Status](https://github.com/frithnanth/perl6-Archive-Libarchive/workflows/test/badge.svg)](https://github.com/frithnanth/perl6-Archive-Libarchive/actions)
 
 ## Example
 

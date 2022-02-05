@@ -1,5 +1,5 @@
 use v6;
-unit class Archive::Libarchive:ver<0.0.14>;
+unit class Archive::Libarchive:ver<0.0.15>;
 
 use NativeCall;
 use Archive::Libarchive::Raw;

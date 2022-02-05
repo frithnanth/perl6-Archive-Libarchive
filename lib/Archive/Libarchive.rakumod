@@ -1,5 +1,5 @@
 use v6;
-unit class Archive::Libarchive:ver<0.0.15>;
+unit class Archive::Libarchive:ver<0.0.15>:auth<zef:FRITH>;
 
 use NativeCall;
 use Archive::Libarchive::Raw;
@@ -578,7 +578,7 @@ method lib-version
 Archive::Libarchive - High-level bindings to libarchive
 
 =head1 SYNOPSIS
-=begin code
+=begin code :lang<raku>
 
 use v6;
 
@@ -602,6 +602,8 @@ sub MAIN(:$file! where { .IO.f // die "file '$file' not found" })
 
 =end code
 
+For more examples see the `example` directory.
+
 =head1 DESCRIPTION
 
 B<Archive::Libarchive> provides an OO interface to libarchive using Archive::Libarchive::Raw.
@@ -616,27 +618,27 @@ As the Libarchive site (L<http://www.libarchive.org/>) states, its implementatio
 =head2 new(LibarchiveOp :$operation!, Any :$file?, Int :$flags?, Str :$format?, :@filters?)
 
 Creates an B<Archive::Libarchive> object. It takes one I<mandatory> argument:
-B<operation>, what kind of operation will be performed.
+C<operation>, what kind of operation will be performed.
 
-The list of possible operations is provided by the B<LibarchiveOp> enum:
+The list of possible operations is provided by the C<LibarchiveOp> enum:
 
-=item LibarchiveRead: open the archive to list its content.
-=item LibarchiveWrite: create a new archive. The file must not be already present.
-=item LibarchiveOverwrite: create a new archive. The file will be overwritten if present.
-=item LibarchiveExtract: extract the archive content.
+=item C<LibarchiveRead>: open the archive to list its content.
+=item C<LibarchiveWrite>: create a new archive. The file must not be already present.
+=item C<LibarchiveOverwrite>: create a new archive. The file will be overwritten if present.
+=item C<LibarchiveExtract>: extract the archive content.
 
 When extracting one can specify some options to be applied to the newly created files. The default options are:
 
-B<ARCHIVE_EXTRACT_TIME +| ARCHIVE_EXTRACT_PERM +| ARCHIVE_EXTRACT_ACL +| ARCHIVE_EXTRACT_FFLAGS>
+C<ARCHIVE_EXTRACT_TIME +| ARCHIVE_EXTRACT_PERM +| ARCHIVE_EXTRACT_ACL +| ARCHIVE_EXTRACT_FFLAGS>
 
 Those constants are defined in Archive::Libarchive::Constants, part of the Archive::Libarchive::Raw
 distribution.
 More details about those operation modes can be found on the libarchive site: L<http://www.libarchive.org/>
 
-If the optional argument B<$file> is provided, then it will be opened; if not provided
-during the initialization, the program must call the B<open> method later.
+If the optional argument C<$file> is provided, then it will be opened; if not provided
+during the initialization, the program must call the C<open> method later.
 
-If the optional B<$format> argument is provided, then the object will select that specific format
+If the optional C<$format> argument is provided, then the object will select that specific format
 while dealing with the archive.
 
 List of possible read formats:
@@ -674,7 +676,7 @@ List of possible write formats:
 =item xar
 =item zip
 
-If the optional B<@filters> parameter is provided, then the object will add those filter to the archive.
+If the optional C<@filters> parameter is provided, then the object will add those filter to the archive.
 Multiple filters can be specified, so a program can manage a file.tar.gz.uu for example.
 The order of the filters is significant, in order to correctly deal with such files as I<file.tar.uu.gz> and
 I<file.tar.gz.uu>.
@@ -724,12 +726,12 @@ Older versions though don't have that capability and the programmer has to defin
 Opens an archive; the first form is used on files, while the second one is used to open an archive that
 resides in memory.
 The first argument is always mandatory, while the other ones might been omitted.
-B<$size> is the size of the internal buffer and defaults to 10240 bytes.
+C<$size> is the size of the internal buffer and defaults to 10240 bytes.
 
-B<Note:> this module does't apply B<$*CWD> to the file name under the hood, so this will create a file in the
+B<Note:> this module does't apply C<$*CWD> to the file name under the hood, so this will create a file in the
 original directory.
 
-=begin code
+=begin code :lang<raku>
 use Archive::Libarchive;
 
 my Archive::Libarchive $a .= new: operation => LibarchiveWrite;
@@ -747,7 +749,7 @@ Closes the internal archive object, frees the memory and cleans up.
 Sets the options for the files created when extracting files from an archive.
 The default options are:
 
-B<ARCHIVE_EXTRACT_TIME +| ARCHIVE_EXTRACT_PERM +| ARCHIVE_EXTRACT_ACL +| ARCHIVE_EXTRACT_FFLAGS>
+C<ARCHIVE_EXTRACT_TIME +| ARCHIVE_EXTRACT_PERM +| ARCHIVE_EXTRACT_ACL +| ARCHIVE_EXTRACT_FFLAGS>
 
 =head2 next-header(Archive::Libarchive::Entry:D $e! --> Bool)
 
@@ -755,13 +757,13 @@ When reading an archive this method fills the Entry object and returns True till
 
 The Entry object is pubblicly defined inside the Archive::Libarchive module. It's initialized this way:
 
-=begin code
+=begin code :lang<raku>
 my Archive::Libarchive::Entry $e .= new;
 =end code
 
 So a complete archive lister can be implemented in few lines:
 
-=begin code
+=begin code :lang<raku>
 use Archive::Libarchive;
 
 sub MAIN(Str :$file! where { .IO.f // die "file '$file' not found" })
@@ -779,7 +781,7 @@ sub MAIN(Str :$file! where { .IO.f // die "file '$file' not found" })
 =head2 data-skip(--> Int)
 
 When reading an archive this method skips file data to jump to the next header.
-It returns B<ARCHIVE_OK> or B<ARCHIVE_EOF> (defined in Archive::Libarchive::Constants)
+It returns C<ARCHIVE_OK> or C<ARCHIVE_EOF> (defined in Archive::Libarchive::Constants)
 
 =head2 read-file-content(Archive::Libarchive::Entry $e! --> Buf)
 
@@ -795,8 +797,8 @@ More details can be found on the libarchive site.
 
 Each optional argument is available as a method of the Archive::Libarchive::Entry object and it can be set when needed.
 
-I<Note> B<write-header> has a lot of optional arguments whose values are collected from the file one is adding to the
-archive. When using the second form of B<write-data> one has to provide at least these arguments:
+I<Note> C<write-header> has a lot of optional arguments whose values are collected from the file one is adding to the
+archive. When using the second form of C<write-data> one has to provide at least these arguments:
 
 =item $size
 =item $atime
@@ -805,7 +807,7 @@ archive. When using the second form of B<write-data> one has to provide at least
 
 For example:
 
-=begin code
+=begin code :lang<raku>
 $a.write-header($filename,
                 :size($buffer.bytes),
                 :atime(now.Int),
@@ -817,7 +819,7 @@ $a.write-header($filename,
 =head2 write-data(Buf $data --> Bool)
 
 When creating an archive this method writes the data for the file being inserted into the archive.
-B<$path> is the pathname of the file to be archived, while B<$data> is a data buffer.
+C<$path> is the pathname of the file to be archived, while C<$data> is a data buffer.
 
 =head2 extract(Str $destpath? --> Bool)
 =head2 extract(&callback:(Archive::Libarchive::Entry $e --> Bool)!, Str $destpath? --> Bool)
@@ -828,7 +830,7 @@ The second form takes a callback function, which receives a Archive::Libarchive:
 
 For example, this will extract only the file whose name is I<test2>:
 
-=begin code
+=begin code :lang<raku>
 $a.extract: sub (Archive::Libarchive::Entry $e --> Bool) { $e.pathname eq 'test2' };
 =end code
 
@@ -843,7 +845,7 @@ Returns a hash with the version number of libarchive and of each library used in
 When the underlying library returns an error condition, the methods will return a Failure object, which can
 be trapped and the exception can be analyzed and acted upon.
 
-The exception object has two fields: $errno and $error, and return a message stating the error number and
+The exception object has two fields: C<$errno> and C<$error>, and return a message stating the error number and
 the associated message as delivered by libarchive.
 
 =head1 Prerequisites
@@ -877,7 +879,5 @@ Fernando Santagata
 Many thanks to Haythem Elganiny for implementing some multi methods in the B<Entry> class.
 
 =head1 License
-
 The Artistic License 2.0
-
 =end pod

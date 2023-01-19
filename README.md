@@ -319,8 +319,123 @@ lib-version
 
 Returns a hash with the version number of libarchive and of each library used internally.
 
+Archive::Libarchive::Entry
+==========================
+
+This class encapsulate an entry of the archive. It provides the following methods.
+
+### pathname(Str $path)
+
+### pathname(--> Str)
+
+Sets or gets a pathname.
+
+### size(Int $size)
+
+### size(--> int64)
+
+Sets or gets the object's size.
+
+### filetype(Int $type)
+
+### filetype(--> int64)
+
+### filetype(:$decode where :so --> List)
+
+Sets or gets the object's file type. If the first form of the getter is used a bit-mapped value is returned, that can be queried using the AE_* constants defined in Archive::Libarchive::Constants. If the second form of the getter is used a list is returned, which contain True or False values for each possible file type, listed in the following order:
+
+  * regular file
+
+  * directory
+
+  * symbolic link
+
+  * socket
+
+  * character device
+
+  * block device
+
+  * fifo (named pipe)
+
+This module exports several subs to test the file type:
+
+### is-file(Int $val --> Bool)
+
+### is-dir(Int $val --> Bool)
+
+### is-link(Int $val --> Bool)
+
+### is-sock(Int $val --> Bool)
+
+### is-chr(Int $val --> Bool)
+
+### is-blk(Int $val --> Bool)
+
+### is-fifo(Int $val --> Bool)
+
+### mode(Int $mode)
+
+### mode(--> int64)
+
+Sets or gets the object's mode.
+
+### perm(Int $perm)
+
+### perm(--> int64)
+
+Sets or gets the object's permissions.
+
+### atime(Int $atime)
+
+### atime(--> int64)
+
+Sets or gets the object's access time.
+
+### ctime(Int $ctime)
+
+### ctime(--> int64)
+
+Sets or gets the object's change time.
+
+### mtime(Int $mtime)
+
+### mtime(--> int64)
+
+Sets or gets the object's modification time.
+
+### birthtime(Int $birthtime)
+
+### birthtime()
+
+Sets or resets the object's birth time.
+
+### uid(Int $uid)
+
+### uid(--> int64)
+
+Sets or gets the object's uid.
+
+### gid(Int $gid)
+
+### gid(--> int64)
+
+Sets or gets the object's gid.
+
+### uname(Str $uname)
+
+### uname(--> Str)
+
+Sets or gets the object's user name.
+
+### gname(Str $gname)
+
+### gname(--> Str)
+
+Sets or gets the object's group name.
+
 Errors
-------
+======
 
 When the underlying library returns an error condition, the methods will return a Failure object, which can be trapped and the exception can be analyzed and acted upon.
 

@@ -26,6 +26,14 @@ class X::Libarchive is Exception
   method message { "Error {$!errno}: $!error"; }
 }
 
+sub is-file(Int $val --> Bool) is export { $val == AE_IFREG }
+sub is-dir(Int $val  --> Bool) is export { $val == AE_IFDIR }
+sub is-link(Int $val --> Bool) is export { $val == AE_IFLNK }
+sub is-sock(Int $val --> Bool) is export { $val == AE_IFSOCK }
+sub is-chr(Int $val  --> Bool) is export { $val == AE_IFCHR }
+sub is-blk(Int $val  --> Bool) is export { $val == AE_IFBLK }
+sub is-fifo(Int $val --> Bool) is export { $val == AE_IFIFO }
+
 class Entry
 {
   trusts Archive::Libarchive;
@@ -84,9 +92,15 @@ class Entry
     archive_entry_set_filetype $!entry, $type;
     self;
   }
-  multi method filetype(--> int64)
+  multi method filetype(:$decode where :!so --> int64)
   {
     archive_entry_filetype $!entry;
+  }
+  multi method filetype(:$decode where :so --> List)
+  {
+    my @types = AE_IFREG, AE_IFDIR, AE_IFLNK, AE_IFSOCK, AE_IFCHR, AE_IFBLK, AE_IFIFO;
+    my $res = archive_entry_filetype $!entry;
+    @types »==» $res;
   }
   multi method mode(Int $mode)
   {
@@ -840,7 +854,99 @@ In both cases one can specify the directory into which the files will be extract
 
 Returns a hash with the version number of libarchive and of each library used internally.
 
-=head2 Errors
+=head1 Archive::Libarchive::Entry
+
+This class encapsulate an entry of the archive. It provides the following methods.
+
+=head3 pathname(Str $path)
+=head3 pathname(--> Str)
+
+Sets or gets a pathname.
+
+=head3 size(Int $size)
+=head3 size(--> int64)
+
+Sets or gets the object's size.
+
+=head3 filetype(Int $type)
+=head3 filetype(--> int64)
+=head3 filetype(:$decode where :so --> List)
+
+Sets or gets the object's file type.
+If the first form of the getter is used a bit-mapped value is returned, that can be queried using the AE_* constants
+defined in Archive::Libarchive::Constants.
+If the second form of the getter is used a list is returned, which contain True or False values for each possible
+file type, listed in the following order:
+
+=item regular file
+=item directory
+=item symbolic link
+=item socket
+=item character device
+=item block device
+=item fifo (named pipe)
+
+This module exports several subs to test the file type:
+
+=head3 is-file(Int $val --> Bool)
+=head3 is-dir(Int $val  --> Bool)
+=head3 is-link(Int $val --> Bool)
+=head3 is-sock(Int $val --> Bool)
+=head3 is-chr(Int $val  --> Bool)
+=head3 is-blk(Int $val  --> Bool)
+=head3 is-fifo(Int $val --> Bool)
+
+=head3 mode(Int $mode)
+=head3 mode(--> int64)
+
+Sets or gets the object's mode.
+
+=head3 perm(Int $perm)
+=head3 perm(--> int64)
+
+Sets or gets the object's permissions.
+
+=head3 atime(Int $atime)
+=head3 atime(--> int64)
+
+Sets or gets the object's access time.
+
+=head3 ctime(Int $ctime)
+=head3 ctime(--> int64)
+
+Sets or gets the object's change time.
+
+=head3 mtime(Int $mtime)
+=head3 mtime(--> int64)
+
+Sets or gets the object's modification time.
+
+=head3 birthtime(Int $birthtime)
+=head3 birthtime()
+
+Sets or resets the object's birth time.
+
+=head3 uid(Int $uid)
+=head3 uid(--> int64)
+
+Sets or gets the object's uid.
+
+=head3 gid(Int $gid)
+=head3 gid(--> int64)
+
+Sets or gets the object's gid.
+
+=head3 uname(Str $uname)
+=head3 uname(--> Str)
+
+Sets or gets the object's user name.
+
+=head3 gname(Str $gname)
+=head3 gname(--> Str)
+
+Sets or gets the object's group name.
+
+=head1 Errors
 
 When the underlying library returns an error condition, the methods will return a Failure object, which can
 be trapped and the exception can be analyzed and acted upon.
